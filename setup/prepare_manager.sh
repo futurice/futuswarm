@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+source init.sh
+
+H="/root"
+
+# awscli, secret
+REMOTE=$(cat <<EOF
+export DEBIAN_FRONTEND=noninteractive
+apt-get -qq update
+apt-get -qq install -y python python-pip
+
+pip install -q setuptools pip awscli==1.14.1 secret==0.8
+pip install -q boto3==1.4.8
+
+mkdir -p $H/.aws
+echo """
+[default]
+aws_access_key_id = $AWS_KEY
+aws_secret_access_key = $AWS_SECRET
+""" > $H/.aws/credentials
+
+echo """
+[default]
+output = json
+region = $AWS_REGION
+""" > $H/.aws/config
+
+mkdir -p $H/.secret
+echo """
+[default]
+vault=$SECRETS_S3_BUCKET
+vaultkey=$KMS_ALIAS
+region=$SECRETS_REGION
+""" > $H/.secret/credentials
+
+EOF
+)
+run_sudo $HOST "$REMOTE"
+
+# Registry
+
+if [ $(docker_version_num) -lt 1709 ]; then
+REMOTE="docker login -u $REGISTRY_USER -p '$REGISTRY_PASS'"
+else
+REMOTE=$(cat <<EOF
+docker login -u $REGISTRY_USER --password-stdin <<< '$REGISTRY_PASS'
+EOF
+)
+fi
+R=$(run_sudo $HOST "$REMOTE")
+rg_status "$(exit_code_ok $? 0)" "Docker private registry access configured for '$REGISTRY_USER'"
+
+R=$(run_user $HOST <<< "[[ -a '/root/.docker/config.json' ]]")
+rg_status "$(exit_code_ok $? 0)" "Docker configuration file exists"
+
+R=$(run_user $HOST <<< "cat /root/.docker/config.json|jq -r '.auths.\"https://index.docker.io/v1/\".auth // empty'")
+rg_status "$R" "Token for Docker Hub created successfully"

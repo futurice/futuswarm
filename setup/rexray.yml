@@ -1,0 +1,15 @@
+libstorage:
+  service: ebs
+  integration:
+    volume:
+      operations:
+        create:
+          default:
+            fsType: ext4
+            size: 1
+        mount:
+          preempt: True
+ebs:
+  accessKey: AWS_KEY
+  secretKey: AWS_SECRET
+  region: AWS_REGION

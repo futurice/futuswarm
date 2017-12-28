@@ -1,0 +1,35 @@
+{
+  "Version": "2012-10-17",
+  "Id": "swarm-policy",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:ReEncrypt",
+        "kms:GenerateDataKey",
+        "kms:DescribeKey"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:ListBucket"],
+      "Resource": [
+        "arn:aws:s3:::SECRETS_S3_BUCKET",
+        "arn:aws:s3:::SWARM_S3_BUCKET"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:*"
+      ],
+      "Resource": [
+        "arn:aws:s3:::SECRETS_S3_BUCKET/*",
+        "arn:aws:s3:::SWARM_S3_BUCKET/*"
+      ]
+    }
+  ]
+}
