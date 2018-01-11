@@ -31,8 +31,6 @@ if [ "$UPLOAD" == "y" ]; then
         aws s3api create-bucket --bucket $SWARM_S3_BUCKET --region $AWS_REGION --create-bucket-configuration LocationConstraint=$AWS_REGION
     fi
     aws s3api put-object --bucket $SWARM_S3_BUCKET --key cli --body /tmp/cli --grant-read uri=http://acs.amazonaws.com/groups/global/AllUsers 1>/dev/null
-
-    yellow "CLI available at $(cli_location)"
 else
     yellow "Skipping CLI upload to Manager '$HOST' and S3 '$(cli_location)'"
 fi
