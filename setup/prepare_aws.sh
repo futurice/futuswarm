@@ -42,7 +42,9 @@ capture_stderr "aws ec2 attach-internet-gateway --internet-gateway-id $IG --vpc-
 RT=$(routetable $VPC|routetable_id)
 rg_status "$RT" "VPC Route Table configured ($RT)"
 capture_as_stderr "aws ec2 create-route --route-table-id $RT --destination-cidr-block 0.0.0.0/0 --gateway-id $IG"|suppress_valid_awscli_errors
-capture_stderr "aws ec2 create-tags --resources $RT --tags Key=Name,Value=$TAG Key=$TAG_KEY,Value=$TAG"|suppress_valid_awscli_errors
+# TODO: only modify Name on RT when no Name exists yet, to allow using an existing VPC setup without disruption
+# capture_stderr "aws ec2 create-tags --resources $RT --tags Key=Name,Value=$TAG"|suppress_valid_awscli_errors
+capture_stderr "aws ec2 create-tags --resources $RT --tags Key=$TAG_KEY,Value=$TAG"|suppress_valid_awscli_errors
 tag_with_futuswarm $RT
 
 # Subnets for VPC
@@ -63,7 +65,7 @@ for k in $(seq 0 $(($SUBNETS_TOTAL-1))); do
         yellow " preparing subnet $k: $(Pcidr $k) $(Paz $k)"
         SUBNET=$(aws ec2 create-subnet --vpc-id $VPC --cidr-block $(Pcidr $k) --availability-zone $(Paz $k)|jq -r '.Subnet.SubnetId')
         aws ec2 modify-subnet-attribute --subnet-id $SUBNET --map-public-ip-on-launch
-        aws ec2 create-tags --resources $SUBNET --tags Key=Name,Value="$TAG-$(Paz $k)" Key=$PURPOSE_TAG_KEY,Value=$SUBNET_TAG_VALUE
+        aws ec2 create-tags --resources $SUBNET --tags Key=Name,Value="$TAG-$(Paz $k)" Key=$TAG_KEY,Value=$TAG
         tag_with_futuswarm $SUBNET
     fi
 done

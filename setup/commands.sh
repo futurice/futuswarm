@@ -274,6 +274,7 @@ replaceinfile "$CDIR/settings.sh" '{COMPANY}' "$_COMPANY"
 
 rm_cloud() {
 # delete all AWS resources with our TAG
+# rm EC2, rm ELB, rm RDS, rm VPC
 echo "y"
 }
 

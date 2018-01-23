@@ -11,11 +11,11 @@ nl2space() {
 }
 
 tag_with_futuswarm() {
-    aws ec2 create-tags --resources $1 --tags Key=futuswarm,Value=$CLOUD
+    aws ec2 create-tags --resources $1 --tags Key=$TAG_KEY,Value=$TAG
 }
 
 tag_elb_with_futuswarm() {
-    aws elb add-tags --load-balancer-names $1 --tags Key=futuswarm,Value=$CLOUD
+    aws elb add-tags --load-balancer-names $1 --tags Key=$TAG_KEY,Value=$TAG
 }
 
 ec2_ids() {
@@ -59,7 +59,7 @@ ig_id() {
 }
 
 subnets() {
-    aws ec2 describe-subnets --filter Name=tag:$PURPOSE_TAG_KEY,Values=$SUBNET_TAG_VALUE
+    aws ec2 describe-subnets --filter Name=tag:$TAG_KEY,Values=$TAG
 }
 
 subnet_in_az() {

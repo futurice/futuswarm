@@ -111,7 +111,7 @@ DOCKER_REGISTRY_PORT=5005
 # - key/value identifiers for AWS resource lookups
 #
 
-TAG_KEY=cloud
+TAG_KEY=futuswarm
 PURPOSE_TAG_KEY=purpose-$TAG
 
 ELB_NAME=$TAG-elb
@@ -120,7 +120,7 @@ SG_NAME=$TAG-sg
 SG_ELB_NAME=$TAG-sg-elb
 SG_RDS_NAME=$TAG-sg-rds
 
-SUBNET_TAG_VALUE=$TAG-subnet
+SUBNET_TAG_VALUE=$TAG
 
 SWARM_ROLE_KEY=$TAG-swarm-role
 SWARM_TAG_VALUE=$TAG-swarm
