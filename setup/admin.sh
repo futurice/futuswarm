@@ -199,11 +199,11 @@ EOF
             echo "Match: $KEY=$VAL"
         fi
         if [ -n "$_arg_new_value" ] && [ "$_direct_match" == "true" ]; then
-            echo " updating $KEY=$_arg_new_value"
+            echo " updating $KEY=$_arg_new_value -n $_name"
             if [ -n "$_arg_noop" ]; then
                 continue
             fi
-            #echo ""|bash -c "$_arg_to config:set $KEY='$VAL' -n $_name" 1>/dev/null &
+            echo ""|bash -c "$_arg_to config:set $KEY='$VAL' -n $_name" 1>/dev/null &
         fi
     done <<< "$SECRETS_FMT"
     wait $(jobs -p)
@@ -235,6 +235,7 @@ running_services_list
 ;; check-for-value)
 exit_on_undefined "$_arg_value" "--value"
 exit_on_undefined "$FROM_AWS_PROFILE" "FROM_AWS_PROFILE="
+exit_on_undefined "$_arg_to" "--to"
 noop_notice
 check_for_value
 

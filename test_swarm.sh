@@ -43,11 +43,14 @@ SERVICE_ONE="acl-multi-one"
 SERVICE_TWO="acl-multi-two"
 SERVICE_THREE="acl-multi-three"
 @test "Test app:deploy" {
-    run bash -c "$(client) app:deploy -n $SERVICE -i mixman/http-hello --async"
-    [ "$status" -eq 0 ]
     run bash -c "$(client) app:deploy -n $SERVICE_ONE -i mixman/http-hello --async"
     run bash -c "$(client) app:deploy -n $SERVICE_TWO -i mixman/http-hello --async"
     run bash -c "$(client) app:deploy -n $SERVICE_THREE -i mixman/http-hello --async"
+    run bash -c "$(client) app:deploy -n $SERVICE -i mixman/http-hello"
+    [ "$status" -eq 0 ]
+    run bash -c "docker service ps $SERVICE|sed 1d|head -n1"
+    result=$(printf "$output"|grep -i "running")
+    [ "$?" -eq 0 ]
 }
 
 @test "Test image:push" {
