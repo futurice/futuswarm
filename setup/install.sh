@@ -277,7 +277,7 @@ yellow "Prepare futuswarm container..."
 yellow "Prepare futuswarm-health container..."
 ( . ./prepare_futuswarm_health_container.sh )
 
-do_post_install "${0##*/}"
+do_post_install "install.sh"
 
 FULL_LOG="$(install_log)"
 green "Installation complete! Logs available at $FULL_LOG"

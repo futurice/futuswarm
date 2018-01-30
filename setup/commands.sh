@@ -2,6 +2,9 @@
 SSH_PORT="${SSH_PORT:-22}"
 TERM="${TERM:-xterm-256color}"
 
+# 30.1.2018: security.ubuntu.com doesnt resolve ipv6
+APT_FORCE_IPV4=true
+
 HOST_OS=$(uname)
 is_osx() {
     [[ "$HOST_OS" == "Darwin"* ]]
