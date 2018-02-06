@@ -5,14 +5,15 @@ source init.sh
 
 # ACM
 CERTS=$(aws acm list-certificates --region=$AWS_REGION)
-CERT_EXISTS=$(echo "$CERTS"|jq -r ".CertificateSummaryList|map(select(.DomainName==\"$ELB_DOMAIN\"))|first // empty")
+ELB_DOMAIN_MILD="${ELB_DOMAIN/\*./}"
+CERT_EXISTS=$(echo "$CERTS"|jq -r ".CertificateSummaryList|map(select(.DomainName==\"$ELB_DOMAIN_MILD\"))|first // empty")
 rg_status "$CERT_EXISTS" "ACM SSL certificate exists ($ELB_DOMAIN)"
 if [ -z "$CERT_EXISTS" ]; then
 read -p "Make ACM SSL Certificate request? [y/n]" -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
-    aws acm request-certificate --domain-name "$ELB_DOMAIN" --idempotency-token "$(echo DOMAIN|tr -d .)" --region="$AWS_REGION"
+    aws acm request-certificate --domain-name "$ELB_DOMAIN_MILD" --subject-alternative-names "$ELB_DOMAIN" --idempotency-token "$(echo $DOMAIN|tr -d .)" --region="$AWS_REGION"
 fi
 fi
 
