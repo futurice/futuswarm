@@ -31,7 +31,7 @@ if [[ -n "$MANAGER_TOKEN_EXISTS" ]]; then
 else
     yellow " creating manager"
 MANAGER_UP=$(run_user $FST_MAN_PUBLIC <<EOF
-docker swarm init $FORCE_NC --listen-addr $FST_MAN_PRIVATE
+docker swarm init $FORCE_NC --listen-addr $FST_MAN_PRIVATE --advertise-addr $FST_MAN_PRIVATE
 EOF
 )
 fi

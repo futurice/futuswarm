@@ -101,7 +101,7 @@ The SSH key to access instances configured from:
 Configure the nameserver to point our `{{DOMAIN}}` (see settings) to the ELB address.
 
 ```sh
-proxy_elb|proxy_ip # {{PROXY_IP}}
+echo $(proxy_elb "$ELB_NAME"|proxy_ip) # Gives {{PROXY_IP}}
 ```
 
 ```sh

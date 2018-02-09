@@ -10,7 +10,7 @@ def hello():
 
 def url_status(url):
     try:
-        return requests.get(url, timeout=0.5).status_code
+        return requests.get(url, timeout=0.5, allow_redirects=False).status_code
     except Exception as e:
         return 500
 
