@@ -1,3 +1,8 @@
+
+# Quickstart to futuswarm
+
+To get a feeling for what is possible check the full feature set via `futuswarm -hh`.
+
 CLI defaults:
 - -t|--tag=latest
 - --port=8000 (eg. matching `EXPOSE 8000` in Dockerfile)
@@ -5,6 +10,7 @@ CLI defaults:
 #### Build a docker image for your project
 
 ```
+# Use a unique tag. Using Git? TAG=$(git rev-parse --short HEAD)
 docker build -t IMAGE_NAME:TAG .
 ```
 
@@ -35,6 +41,12 @@ docker build -t IMAGE_NAME:TAG .
 #### Access the container
 
 `futuswarm app:shell -n APP_NAME`
+
+#### Attach a database (Postgres)
+
+`futuswarm db:create:postgres -n APP_NAME`
+
+The database connection configuration is created for you, check `futuswarm config -n APP_NAME`.
 
 #### Attach an EBS volume to a container
 
