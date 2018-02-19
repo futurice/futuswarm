@@ -61,6 +61,8 @@ and attach it to /data on the container:
 
 To add persistence to an existing service remove it first.
 
-#### Open access to everyone
+#### Open access to service for everyone
 
-At deployment stage set `--open=true`
+At deployment stage set `--open=true` to allow access to the service from the configured `OPEN_DOMAIN`. An existing service needs to be removed for this flag to come in effect.
+
+`futuswarm app:inspect -n APP_NAME` lists `com.df.serviceDomain` as the working domain names for the service.
