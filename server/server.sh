@@ -121,7 +121,7 @@ create_service() {
 _CPU=1
 _REPLICAS=1
 _PLACEMENT="--placement-pref 'spread=node.labels.default'"
-_CONSTRAINT="--constraint 'node.role == worker'"
+_CONSTRAINT="--constraint 'node.role==worker'"
 if [[ -n "$(is_admin)" ]]; then
     if [[ -n "$_arg_cpu" ]]; then
         _LIMIT_CPU="--limit-cpu=$_arg_cpu"
@@ -130,7 +130,7 @@ if [[ -n "$(is_admin)" ]]; then
         _PLACEMENT="--placement-pref 'spread=node.labels.$_arg_placement'"
     fi
     if [[ -n "$_arg_constraint" ]]; then
-        _CONSTRAINT="--constraint 'node.role == $_arg_constraint'"
+        _CONSTRAINT="--constraint 'node.role==$_arg_constraint'"
     fi
 fi
 if [[ -n "$_arg_replicas" ]]; then
@@ -141,6 +141,7 @@ CMD=$(echo docker service create \
   --name=$_arg_name \
   --network=proxy \
   --with-registry-auth \
+  --restart-max-attempts=3 \
   "$ENVIRON_VARS" \
   -l com.df.notify=true \
   -l com.df.distribute=false \
