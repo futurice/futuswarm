@@ -2,13 +2,15 @@
 source init.sh
 
 HOST="${HOST:-$(manager_ip)}"
+DOCKER_FLOW_PROXY="${DOCKER_FLOW_PROXY:-vfarcic/docker-flow-proxy:18.02.08-104}"
+DOCKER_FLOW_LISTENER="${DOCKER_FLOW_LISTENER:-vfarcic/docker-flow-swarm-listener:18.02.15-32}"
 
 yellow "Building SSO-proxy image..."
 SSO_IMAGE=futurice/sso-proxy
 SSO_NAME=sso-proxy
-SSO_TAG=$(git rev-parse --short HEAD)
 
 # defaults
+rm -rf /tmp/proxy
 cp -R ../proxy /tmp/proxy/
 # CONFIG_DIR overrides
 if [ -d "$CDIR/proxy/" ]; then
@@ -16,6 +18,10 @@ if [ -d "$CDIR/proxy/" ]; then
 fi
 
 cd /tmp/proxy
+git init . 1>/dev/null
+git add -A 1>/dev/null
+git commit -m "all in" 1>/dev/null
+SSO_TAG="${SSO_TAG:-$(git rev-parse --short HEAD)}"
 docker build -t "$SSO_IMAGE:$SSO_TAG" . 1>/dev/null
 cd - 1>/dev/null
 
@@ -73,7 +79,7 @@ docker service create --name swarm-listener \
     -e DF_NOTIFY_REMOVE_SERVICE_URL=http://proxy:8080/v1/docker-flow-proxy/remove \
     --constraint 'node.role==manager' \
     --detach \
-    vfarcic/docker-flow-swarm-listener
+    $DOCKER_FLOW_LISTENER
 EOF
 )
 SSH_ARGS="-t sudo" sudo_client "$HOST" "'$REMOTE'"
@@ -85,6 +91,8 @@ if [[ -n "$SERVICE_EXISTS" ]]; then
     :
 else
 yellow " creating DFP:proxy service"
+# Configuration documentation:
+# https://proxy.dockerflow.com/config/
 REMOTE=$(cat <<EOF
 docker service create --name proxy \
     -p 81:80 \
@@ -92,12 +100,17 @@ docker service create --name proxy \
     --network proxy \
     -e MODE=swarm \
     -e LISTENER_ADDRESS=swarm-listener \
-    -e EXTRA_FRONTEND="http-request set-header X-Forwarded-Proto https if { ssl_fc }" \
+    -e SERVICE_DOMAIN_ALGO="hdr_beg(host)" \
+    -e CONNECTION_MODE=http-server-close \
     -e DEFAULT_PORTS="81,444:ssl" \
     -e TIMEOUT_HTTP_REQUEST=300 \
+    -e TERMINATE_ON_RELOAD=true \
+    -e CHECK_RESOLVERS=true \
+    -e DEBUG=true \
+    -e DEBUG_ERRORS_ONLY=true \
     --constraint 'node.role==manager' \
     --detach \
-    vfarcic/docker-flow-proxy
+    $DOCKER_FLOW_PROXY
 EOF
 )
 SSH_ARGS="-t sudo" sudo_client "$HOST" "'$REMOTE'"

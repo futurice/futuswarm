@@ -140,6 +140,7 @@ ENVIRON_VARS="$(get_secrets)"
 CMD=$(echo docker service create \
   --name=$_arg_name \
   --network=proxy \
+  --endpoint-mode dnsrr \
   --with-registry-auth \
   --restart-max-attempts=3 \
   "$ENVIRON_VARS" \
