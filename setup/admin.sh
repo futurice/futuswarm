@@ -118,7 +118,7 @@ yellow "Restoring all known services using AWS-profile '$FROM_AWS_PROFILE' from 
 SERVICES="${MOCK_SERVICES:-$(stored_services_list "$FROM_AWS_PROFILE")}"
 while IFS= read -r line; do
     _name="$(read_value "$line" ".Name")"
-    _image_tag="$(read_value "$line" ".Image")"
+    _image_tag="$(read_value "$line" ".Image" "5")"
     _image=$(echo $_image_tag|cut -f1 -d:)
     _tag=$(echo $_image_tag|cut -f2 -d:)
     if [[ -z "$_name" ]]; then
@@ -144,7 +144,8 @@ done <<< "$SERVICES"
 
 read_value() {
     if [[ "$_arg_legacy_docker" == "true" ]]; then
-        echo "$(echo $1|awk '{print $2}')"
+        _LOOKUP="${3:-2}"
+        echo "$(echo $1|awk "{print \$$_LOOKUP}")"
     else
         echo "$(echo $1|jq -r "$2")"
     fi
