@@ -121,26 +121,28 @@ create_service() {
 _CPU=1
 _REPLICAS=1
 _PLACEMENT="--placement-pref 'spread=node.labels.default'"
-_CONSTRAINT="--constraint 'node.role == worker'"
+_CONSTRAINT="--constraint 'node.role==worker'"
 if [[ -n "$(is_admin)" ]]; then
     if [[ -n "$_arg_cpu" ]]; then
-        _CPU="$_arg_cpu"
+        _LIMIT_CPU="--limit-cpu=$_arg_cpu"
     fi
     if [[ -n "$_arg_placement" ]]; then
         _PLACEMENT="--placement-pref 'spread=node.labels.$_arg_placement'"
     fi
     if [[ -n "$_arg_constraint" ]]; then
-        _CONSTRAINT="--constraint 'node.role == $_arg_constraint'"
+        _CONSTRAINT="--constraint 'node.role==$_arg_constraint'"
     fi
-    if [[ -n "$_arg_replicas" ]]; then
-        _REPLICAS="$_arg_replicas"
-    fi
+fi
+if [[ -n "$_arg_replicas" ]]; then
+    _REPLICAS="$_arg_replicas"
 fi
 ENVIRON_VARS="$(get_secrets)"
 CMD=$(echo docker service create \
   --name=$_arg_name \
   --network=proxy \
+  --endpoint-mode dnsrr \
   --with-registry-auth \
+  --restart-max-attempts=3 \
   "$ENVIRON_VARS" \
   -l com.df.notify=true \
   -l com.df.distribute=false \
@@ -148,7 +150,7 @@ CMD=$(echo docker service create \
   -l com.df.serviceDomain="$(get_domains)" \
   -l com.df.port=$_arg_port \
   $DOCKER_DETACH \
-  --limit-cpu=$_CPU \
+  $_LIMIT_CPU \
   --replicas=$_REPLICAS \
   "$_CONSTRAINT" \
   "$_PLACEMENT" \

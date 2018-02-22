@@ -1,3 +1,8 @@
+
+# Quickstart to futuswarm
+
+To get a feeling for what is possible check the full feature set via `futuswarm -hh`.
+
 CLI defaults:
 - -t|--tag=latest
 - --port=8000 (eg. matching `EXPOSE 8000` in Dockerfile)
@@ -5,6 +10,7 @@ CLI defaults:
 #### Build a docker image for your project
 
 ```
+# Use a unique tag. Using Git? TAG=$(git rev-parse --short HEAD)
 docker build -t IMAGE_NAME:TAG .
 ```
 
@@ -36,6 +42,12 @@ docker build -t IMAGE_NAME:TAG .
 
 `futuswarm app:shell -n APP_NAME`
 
+#### Attach a database (Postgres)
+
+`futuswarm db:create:postgres -n APP_NAME`
+
+The database connection configuration is created for you, check `futuswarm config -n APP_NAME`.
+
 #### Attach an EBS volume to a container
 
 Create a volume named **data**,
@@ -49,6 +61,8 @@ and attach it to /data on the container:
 
 To add persistence to an existing service remove it first.
 
-#### Open access to everyone
+#### Open access to service for everyone
 
-At deployment stage set `--open=true`
+At deployment stage set `--open=true` to allow access to the service from the configured `OPEN_DOMAIN`. An existing service needs to be removed for this flag to come in effect.
+
+`futuswarm app:inspect -n APP_NAME` lists `com.df.serviceDomain` as the working domain names for the service.

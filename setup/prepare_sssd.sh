@@ -24,6 +24,9 @@ for ip in ${HOSTS[@]}; do
 done
 wait $(jobs -p)
 
+# ensure clean tmp-directory
+rm -rf /tmp/ansible
+
 set +u # virtualenv...
 mk_virtualenv
 source venv/bin/activate

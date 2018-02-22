@@ -98,6 +98,17 @@ R=$(cat ~/.aws/credentials|cat ~/.aws/credentials|grep -a2 $AWS_PROFILE|grep aws
 rg_status "$R" "AWS credentials configured" "-> See installation.md"
 }
 
+WELCOME=$(cat <<EOF
+
+~
+~ futuswarm installer
+~ All AWS resources are created once, tagged for ID and then modified according to your "CLOUD=$CLOUD" settings.
+~ All created AWS resources remain safely intact between installer re-runs.
+~
+EOF
+)
+green "$WELCOME"
+echo ""
 yellow "Using Settings: $CDIR"
 yellow "Check local configuration..."
 check_env
@@ -266,7 +277,7 @@ yellow "Prepare futuswarm container..."
 yellow "Prepare futuswarm-health container..."
 ( . ./prepare_futuswarm_health_container.sh )
 
-do_post_install "${0##*/}"
+do_post_install "install.sh"
 
 FULL_LOG="$(install_log)"
 green "Installation complete! Logs available at $FULL_LOG"

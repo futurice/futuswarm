@@ -49,14 +49,14 @@ OPEN_DOMAIN=
 
 COMPANY=futurice
 DOCKER_CONTAINER_PORT=8000
-DOCKER_VERSION="${DOCKER_VERSION:-17.06.0~ce-0~ubuntu}"
+DOCKER_VERSION="${DOCKER_VERSION:-18.02.0~ce-0~ubuntu}"
 
 #
 # AMI
 # - Ubuntu AMI lookup https://cloud-images.ubuntu.com/locator/ec2/
 #
 
-AMI=ami-d8f4deab
+AMI=ami-37940d58
 BLOCKDEVICE=/dev/sda1
 BLOCKDEVICE_SIZE=20
 BLOCKDEVICE_VOLUME_TYPE=gp2

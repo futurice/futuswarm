@@ -12,6 +12,9 @@ _arg_force=
 _arg_noop=
 _arg_show_examples=
 _arg_env=default
+_arg_value=
+_arg_new_value=
+_arg_legacy_docker=
 
 mk_virtualenv
 source venv/bin/activate
@@ -42,11 +45,15 @@ printf "\t%s\n" " "
 printf "\t%s\n" "Commands:"
 printf "\t%s\n" " running-services"
 printf "\t%s\n" " stored-services"
-printf "\t%s\n" " migrate-secrets --from A_CLI --to B_CLI"
-print_example "? Move secrets from swarm A to swarm B using their respective CLIs"
+printf "\t%s\n" " migrate-secrets --to B_CLI"
+print_example "? Move secrets from swarm A to swarm B using B's CLIs"
 print_example "? ... --from futuswarm --to futuswarmv2"
 printf "\t%s\n" " restore-services --to CLI [--force]"
 print_example "? Restore all known services. Optionally remove existing service before deployment."
+printf "\t%s\n" " check-for-value --value (--new-value)"
+print_example "? Check for deprecated configuration values and update as necessary"
+printf "\t%s\n" " check-for-key --value (--new-value)"
+print_example "? Check for deprecated configuration values by key names and update as necessary"
 }
 
 while test $# -gt 0; do
@@ -58,6 +65,12 @@ while test $# -gt 0; do
             _arg_to=$(arg_required to "$1" "$_two") || die
         ;; --env|--env=*)
             _arg_env=$(arg_required env "$1" "$_two") || die
+        ;; --value|--value=*)
+            _arg_value=$(arg_required value "$1" "$_two") || die
+        ;; --new-value|--new-value=*)
+            _arg_new_value=$(arg_required new-value "$1" "$_two") || die
+        ;; --legacy-docker)
+            _arg_legacy_docker=true
         ;; --force)
             _arg_force=true
         ;; --noop)
@@ -89,7 +102,7 @@ TO_AWS_PROFILE="${TO_AWS_PROFILE:-$FROM_AWS_PROFILE}"
 FROM_AWS_PROFILE="${FROM_AWS_PROFILE:-$TO_AWS_PROFILE}"
 
 stored_services_list() {
-    AWS_PROFILE="$1" secret get $KEY --vaultkey="$KMS_ALIAS" --vault="$SECRETS_S3_BUCKET" --env "$_arg_env"
+    AWS_PROFILE="$1" secret get $KEY --vaultkey="$KMS_ALIAS" --vault="$SECRETS_S3_BUCKET" --env "$_arg_env" --region "$SECRETS_REGION"
 }
 
 running_services_list() {
@@ -97,15 +110,15 @@ running_services_list() {
 }
 
 service_secrets() {
-    AWS_PROFILE="$1" secret config -P "$2" --vaultkey="$KMS_ALIAS" --vault="$SECRETS_S3_BUCKET" --env "$_arg_env" -F json
+    AWS_PROFILE="$1" secret config -P "$2" --vaultkey="$KMS_ALIAS" --vault="$SECRETS_S3_BUCKET" --env "$_arg_env" --region "$SECRETS_REGION" -F json
 }
 
 restore_services() {
-yellow "Restoring all known services using AWS-profile '$FROM_AWS_PROFILE' to futuswarm '$CLOUD' using CLI '$_arg_to' [env: $_arg_env]"
+yellow "Restoring all known services using AWS-profile '$FROM_AWS_PROFILE' from futuswarm '$CLOUD' to futuswarm using CLI '$_arg_to' [env: $_arg_env]"
 SERVICES="${MOCK_SERVICES:-$(stored_services_list "$FROM_AWS_PROFILE")}"
 while IFS= read -r line; do
-    _name="$(echo $line|jq -r '.Name')"
-    _image_tag="$(echo $line|jq -r '.Image')"
+    _name="$(read_value "$line" ".Name")"
+    _image_tag="$(read_value "$line" ".Image" "5")"
     _image=$(echo $_image_tag|cut -f1 -d:)
     _tag=$(echo $_image_tag|cut -f2 -d:)
     if [[ -z "$_name" ]]; then
@@ -129,19 +142,33 @@ while IFS= read -r line; do
 done <<< "$SERVICES"
 }
 
+read_value() {
+    if [[ "$_arg_legacy_docker" == "true" ]]; then
+        _LOOKUP="${3:-2}"
+        echo "$(echo $1|awk "{print \$$_LOOKUP}")"
+    else
+        echo "$(echo $1|jq -r "$2")"
+    fi
+}
+
 migrate_secrets() {
 exit_on_undefined "$FROM_AWS_PROFILE" "FROM_AWS_PROFILE="
-yellow "Migrating secrets using AWS-profile '$FROM_AWS_PROFILE' to futuswarm '$CLOUD' using CLI '$_arg_to' [env: $_arg_env]"
+yellow "Migrating secrets using AWS-profile '$FROM_AWS_PROFILE' from futuswarm '$CLOUD' to futuswarm using CLI '$_arg_to' [env: $_arg_env]"
 # NOTE: echo ""| prevents stdin hijack
 SERVICES="${MOCK_SERVICES:-$(stored_services_list "$FROM_AWS_PROFILE")}"
 while IFS= read -r line; do
-    _name="$(echo $line|jq -r '.Name')"
+    _name="$(read_value "$line" ".Name")"
     yellow "service: $_name"
     SECRETS="${MOCK_SECRETS:-$(service_secrets "$FROM_AWS_PROFILE" "$_name")}"
 SECRETS_FMT=$(python commands.py stdin_to_json_newlined_objects <<EOF
 $SECRETS
 EOF
 )
+TOTAL_SECRETS="$(echo "$SECRETS_FMT"|wc -l)"
+_bg=""
+if [[ "$TOTAL_SECRETS" -lt 10 ]]; then
+    _bg="&"
+fi
     while IFS= read -r sd; do
         KEY="$(echo $sd|jq -r '.Key')"
         VAL="$(echo $sd|jq -r '.Value')"
@@ -152,7 +179,91 @@ EOF
         if [ -n "$_arg_noop" ]; then
             continue
         fi
-        echo ""|bash -c "$_arg_to config:set $KEY='$VAL' -n $_name" 1>/dev/null &
+        echo ""|bash -c "$_arg_to config:set $KEY='$VAL' -n $_name" 1>/dev/null $_bg
+    done <<< "$SECRETS_FMT"
+    wait $(jobs -p)
+done <<< "$SERVICES"
+}
+
+check_for_value() {
+yellow "Checking secrets using AWS-profile '$FROM_AWS_PROFILE' for '$_arg_value' [env: $_arg_env]"
+# NOTE: echo ""| prevents stdin hijack
+SERVICES="${MOCK_SERVICES:-$(stored_services_list "$FROM_AWS_PROFILE")}"
+while IFS= read -r line; do
+    _name="$(read_value "$line" ".Name")"
+    yellow "service: $_name"
+    SECRETS="${MOCK_SECRETS:-$(service_secrets "$FROM_AWS_PROFILE" "$_name")}"
+SECRETS_FMT=$(python commands.py stdin_to_json_newlined_objects <<EOF
+$SECRETS
+EOF
+)
+TOTAL_SECRETS="$(echo "$SECRETS_FMT"|wc -l)"
+_bg=""
+if [[ "$TOTAL_SECRETS" -lt 10 ]]; then
+    _bg="&"
+fi
+    while IFS= read -r sd; do
+        KEY="$(echo $sd|jq -r '.Key')"
+        VAL="$(echo $sd|jq -r '.Value')"
+        if [ -z "$KEY" ]; then
+            continue
+        fi
+        _direct_match=
+        if [[ "$VAL" == "$_arg_value" ]]; then
+            _direct_match=true
+        fi
+        if [[ "$VAL" =~ "$_arg_value" ]]; then
+            echo "Match: $KEY=$VAL"
+        fi
+        if [ -n "$_arg_new_value" ] && [ "$_direct_match" == "true" ]; then
+            echo " updating: $_arg_to config:set $KEY='$_arg_new_value' -n $_name"
+            if [ -n "$_arg_noop" ]; then
+                continue
+            fi
+            echo ""|bash -c "$_arg_to config:set $KEY='$_arg_new_value' -n $_name" --async 1>/dev/null $_bg
+        fi
+    done <<< "$SECRETS_FMT"
+    wait $(jobs -p)
+done <<< "$SERVICES"
+}
+
+check_for_key() {
+yellow "Checking secrets using AWS-profile '$FROM_AWS_PROFILE' for '$_arg_value' [env: $_arg_env]"
+# NOTE: echo ""| prevents stdin hijack
+SERVICES="${MOCK_SERVICES:-$(stored_services_list "$FROM_AWS_PROFILE")}"
+while IFS= read -r line; do
+    _name="$(read_value "$line" ".Name")"
+    yellow "service: $_name"
+    SECRETS="${MOCK_SECRETS:-$(service_secrets "$FROM_AWS_PROFILE" "$_name")}"
+SECRETS_FMT=$(python commands.py stdin_to_json_newlined_objects <<EOF
+$SECRETS
+EOF
+)
+TOTAL_SECRETS="$(echo "$SECRETS_FMT"|wc -l)"
+_bg=""
+if [[ "$TOTAL_SECRETS" -lt 10 ]]; then
+    _bg="&"
+fi
+    while IFS= read -r sd; do
+        KEY="$(echo $sd|jq -r '.Key')"
+        VAL="$(echo $sd|jq -r '.Value')"
+        if [ -z "$KEY" ]; then
+            continue
+        fi
+        _direct_match=
+        if [[ "$KEY" == "$_arg_value" ]]; then
+            _direct_match=true
+        fi
+        if [[ "$KEY" =~ "$_arg_value" ]]; then
+            echo "Match: $KEY=$VAL"
+        fi
+        if [ -n "$_arg_new_value" ] && [ "$_direct_match" == "true" ]; then
+            echo " updating: $_arg_to config:set $KEY='$_arg_new_value' -n $_name"
+            if [ -n "$_arg_noop" ]; then
+                continue
+            fi
+            echo ""|bash -c "$_arg_to config:set $KEY='$_arg_new_value' -n $_name" --async 1>/dev/null $_bg
+        fi
     done <<< "$SECRETS_FMT"
     wait $(jobs -p)
 done <<< "$SERVICES"
@@ -180,8 +291,23 @@ stored_services_list "$FROM_AWS_PROFILE"
 exit_on_undefined "$_arg_from" "--from"
 running_services_list
 
+;; check-for-value)
+exit_on_undefined "$_arg_value" "--value"
+exit_on_undefined "$FROM_AWS_PROFILE" "FROM_AWS_PROFILE="
+exit_on_undefined "$_arg_to" "--to"
+noop_notice
+check_for_value
+
+;; check-for-key)
+exit_on_undefined "$_arg_value" "--value"
+exit_on_undefined "$FROM_AWS_PROFILE" "FROM_AWS_PROFILE="
+exit_on_undefined "$_arg_to" "--to"
+noop_notice
+check_for_key
+
 ;; *)
 echo "Unrecognized command '$ACTION'"
+print_help
 ;;
 esac
 

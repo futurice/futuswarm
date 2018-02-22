@@ -3,6 +3,11 @@ source init.sh
 
 NAME="$1"
 
+if [ -z "$NAME" ]; then
+    red "NAME unset"
+    safe_exit 1
+fi
+
 SUBNET_IDS=$(echo $(subnets|jq -r '.Subnets[].SubnetId'))
 _EC_SUBNET_GROUPS=$(aws elasticache describe-cache-subnet-groups)
 _EC_SUBNET_GROUP=$(echo "$_EC_SUBNET_GROUPS"|jq -r ".CacheSubnetGroups|map(select(.CacheSubnetGroupName==\"$EC_SUBNET_GROUP_NAME\"))|first // empty")

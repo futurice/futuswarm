@@ -35,7 +35,7 @@ fi
 mk_ssh_cmd() {
 local _host="$(determine_host "$1")"
 local _port="$(determine_port "$1" $SSH_PORT)"
-echo "TERM=xterm-256color ssh -A ${SSH_FLAGS:-} -o Compression=no -o ServerAliveInterval=10 -o ConnectTimeout=3 -o LogLevel=ERROR -o StrictHostKeyChecking=no $WITH_SSH_KEY -p $_port $SSH_USER@$_host $SSH_ARGS"
+echo "TERM=xterm-256color ssh -A ${SSH_FLAGS:-} -o Compression=no -o ServerAliveInterval=10 -o ConnectTimeout=3 -o LogLevel=ERROR -q -o StrictHostKeyChecking=no $WITH_SSH_KEY -p $_port $SSH_USER@$_host $SSH_ARGS"
 }
 
 # MUTABLE VARIABLES

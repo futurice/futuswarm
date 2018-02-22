@@ -73,3 +73,26 @@ This is an open source labor that helped Futurice IT become "Cloud Ready" [Makin
 * Centralized Logging
 
 Interested? Want to contribute? See [futuswarm github](https://github.com/futurice/futuswarm) for the installer and further details.
+
+# AWS Resources
+
+* All AWS resources are created once, tagged for ID and then modified in future
+* All created AWS resources remain safely intact between installer re-runs
+
+# Architecture Notes
+
+Request life cycle:
+```sh
+HTTP(s) request towards https://service-name.cloud.company.com
+ => AWS Elastic Load Balancer (ACM certificate, HTTPS termination)
+ => Single Sign-On (SSO Proxy) via Apache
+ => Service Discovery via Docker Flow Proxy (Golang server to HAProxy)
+ => Service
+```
+
+Deployed services are accessible and configurable using the CLI by their deployment name (`-n name`). First deployment adds ownership for ACL.
+
+Links:
+ * [Apache mod_auth_pubtkt](https://neon1.net/mod_auth_pubtkt/)
+ * [Docker Flow Proxy](https://github.com/vfarcic/docker-flow-proxy)
+ * [SSSD Ansible recipe](https://github.com/futurice/ansible)

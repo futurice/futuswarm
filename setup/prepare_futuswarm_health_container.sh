@@ -33,6 +33,7 @@ yellow " creating $FS_HEALTH"
 REMOTE=$(cat <<EOF
 docker service create --name $FS_HEALTH \
     --network proxy \
+    --endpoint-mode dnsrr \
     --constraint 'node.role==manager' \
     --detach=false \
     $FS_HEALTH:$TAG

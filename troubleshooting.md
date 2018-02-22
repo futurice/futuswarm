@@ -8,3 +8,7 @@ Harmless, given the image was uploaded earlier to the Swarm (image:push). This m
 ## The wrong version of my project is deployed
 
 Check that you've built and deployed the project using the same TAG. Using 'latest' can lead to inconsistency.
+
+## app:deploy hangs (eg. "task: non-zero exit")
+
+For some reason the service start fails (check logs/configuration) leaving Docker CLI hanging. CTRL-C to escape.

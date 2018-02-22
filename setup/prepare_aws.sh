@@ -5,14 +5,15 @@ source init.sh
 
 # ACM
 CERTS=$(aws acm list-certificates --region=$AWS_REGION)
-CERT_EXISTS=$(echo "$CERTS"|jq -r ".CertificateSummaryList|map(select(.DomainName==\"$ELB_DOMAIN\"))|first // empty")
+ELB_DOMAIN_MILD="${ELB_DOMAIN/\*./}"
+CERT_EXISTS=$(echo "$CERTS"|jq -r ".CertificateSummaryList|map(select(.DomainName==\"$ELB_DOMAIN_MILD\"))|first // empty")
 rg_status "$CERT_EXISTS" "ACM SSL certificate exists ($ELB_DOMAIN)"
 if [ -z "$CERT_EXISTS" ]; then
 read -p "Make ACM SSL Certificate request? [y/n]" -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
-    aws acm request-certificate --domain-name "$ELB_DOMAIN" --idempotency-token "$(echo DOMAIN|tr -d .)" --region="$AWS_REGION"
+    aws acm request-certificate --domain-name "$ELB_DOMAIN_MILD" --subject-alternative-names "$ELB_DOMAIN" --idempotency-token "$(echo $DOMAIN|tr -d .)" --region="$AWS_REGION"
 fi
 fi
 
@@ -42,7 +43,9 @@ capture_stderr "aws ec2 attach-internet-gateway --internet-gateway-id $IG --vpc-
 RT=$(routetable $VPC|routetable_id)
 rg_status "$RT" "VPC Route Table configured ($RT)"
 capture_as_stderr "aws ec2 create-route --route-table-id $RT --destination-cidr-block 0.0.0.0/0 --gateway-id $IG"|suppress_valid_awscli_errors
-capture_stderr "aws ec2 create-tags --resources $RT --tags Key=Name,Value=$TAG Key=$TAG_KEY,Value=$TAG"|suppress_valid_awscli_errors
+# TODO: only modify Name on RT when no Name exists yet, to allow using an existing VPC setup without disruption
+# capture_stderr "aws ec2 create-tags --resources $RT --tags Key=Name,Value=$TAG"|suppress_valid_awscli_errors
+capture_stderr "aws ec2 create-tags --resources $RT --tags Key=$TAG_KEY,Value=$TAG"|suppress_valid_awscli_errors
 tag_with_futuswarm $RT
 
 # Subnets for VPC
@@ -63,7 +66,7 @@ for k in $(seq 0 $(($SUBNETS_TOTAL-1))); do
         yellow " preparing subnet $k: $(Pcidr $k) $(Paz $k)"
         SUBNET=$(aws ec2 create-subnet --vpc-id $VPC --cidr-block $(Pcidr $k) --availability-zone $(Paz $k)|jq -r '.Subnet.SubnetId')
         aws ec2 modify-subnet-attribute --subnet-id $SUBNET --map-public-ip-on-launch
-        aws ec2 create-tags --resources $SUBNET --tags Key=Name,Value="$TAG-$(Paz $k)" Key=$PURPOSE_TAG_KEY,Value=$SUBNET_TAG_VALUE
+        aws ec2 create-tags --resources $SUBNET --tags Key=Name,Value="$TAG-$(Paz $k)" Key=$TAG_KEY,Value=$TAG
         tag_with_futuswarm $SUBNET
     fi
 done
