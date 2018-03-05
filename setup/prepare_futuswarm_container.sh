@@ -23,6 +23,7 @@ replaceinfile '/tmp/container/index.md' 'CLI_LOCATION' "$(cli_location)"
 replaceinfile '/tmp/container/index.md' 'CLI_NAME' "$CLI_NAME"
 replaceinfile '/tmp/container/index.md' 'COMPANY' "$COMPANY"
 replaceinfile '/tmp/container/index.md' 'OPEN_DOMAIN' "$OPEN_DOMAIN"
+replaceinfile '/tmp/container/index.md' 'DOMAIN' "$DOMAIN"
 
 # .md -> .html
 markdown2 /tmp/container/index.md > /tmp/container/index.html
