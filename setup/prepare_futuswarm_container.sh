@@ -62,7 +62,7 @@ push_image $FS $TAG
 
 cd ../client
 deploy_service $FS $TAG $FS 1>/dev/null &
-spinner $! "Deploying $FS service"
+spinner $! "Deploying $FS:$TAG as mainpage"
 cd - 1>/dev/null
 
 # exit virtualenv

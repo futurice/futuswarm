@@ -2,13 +2,27 @@
 source init.sh
 
 HOST="${HOST:-$(manager_ip)}"
-DOCKER_FLOW_PROXY="${DOCKER_FLOW_PROXY:-vfarcic/docker-flow-proxy:18.02.08-104}"
 DOCKER_FLOW_LISTENER="${DOCKER_FLOW_LISTENER:-vfarcic/docker-flow-swarm-listener:18.02.15-32}"
 
-yellow "Building SSO-proxy image..."
+yellow "Building Docker Flow Proxy image..."
+DFP_IMAGE="futuswarm/docker-flow-proxy"
+rm -rf /tmp/docker-flow-proxy
+cp -R ../docker-flow-proxy /tmp/docker-flow-proxy/
+# CONFIG_DIR overrides
+if [ -d "$CDIR/docker-flow-proxy/" ]; then
+    cp $CDIR/docker-flow-proxy/* /tmp/docker-flow-proxy/
+fi
+cd /tmp/docker-flow-proxy
+git init . 1>/dev/null
+git add -A 1>/dev/null
+git commit -m "all in" 1>/dev/null
+DFP_TAG="${DFP_TAG:-$(git rev-parse --short HEAD)}"
+docker build -t "$DFP_IMAGE:$DFP_TAG" . 1>/dev/null
+cd - 1>/dev/null
+
+yellow "Building Single Sign On (sso-proxy) image..."
 SSO_IMAGE=futurice/sso-proxy
 SSO_NAME=sso-proxy
-
 # defaults
 rm -rf /tmp/proxy
 cp -R ../proxy /tmp/proxy/
@@ -16,7 +30,6 @@ cp -R ../proxy /tmp/proxy/
 if [ -d "$CDIR/proxy/" ]; then
     cp $CDIR/proxy/* /tmp/proxy/
 fi
-
 cd /tmp/proxy
 git init . 1>/dev/null
 git add -A 1>/dev/null
@@ -70,7 +83,7 @@ rg_status "$SERVICE_EXISTS" "Docker Flow Proxy: 'swarm-listener' is a Swarm serv
 if [[ -n "$SERVICE_EXISTS" ]]; then
     :
 else
-yellow " creating DFP:swarm-listener service"
+yellow " creating Docker Flow Proxy (swarm-listener) service"
 REMOTE=$(cat <<EOF
 docker service create --name swarm-listener \
     --network proxy \
@@ -90,7 +103,7 @@ rg_status "$SERVICE_EXISTS" "Docker Flow Proxy: 'proxy' is a Swarm service"
 if [[ -n "$SERVICE_EXISTS" ]]; then
     :
 else
-yellow " creating DFP:proxy service"
+yellow " creating Docker Flow Proxy (proxy) service"
 # Configuration documentation:
 # https://proxy.dockerflow.com/config/
 REMOTE=$(cat <<EOF
@@ -110,7 +123,7 @@ docker service create --name proxy \
     -e DEBUG_ERRORS_ONLY=true \
     --constraint 'node.role==manager' \
     --detach \
-    $DOCKER_FLOW_PROXY
+    $DFP_IMAGE:$DFP_TAG
 EOF
 )
 SSH_ARGS="-t sudo" sudo_client "$HOST" "'$REMOTE'"

@@ -65,7 +65,7 @@ SERVICE_THREE="acl-multi-three"
 }
 
 @test "Test app:list contains docker-flow-proxy" {
-    run bash -c "$(client) app:list|grep vfarcic/docker-flow-proxy"
+    run bash -c "$(client) app:list|grep docker-flow-proxy"
     [ "$status" -eq 0 ]
 }
 

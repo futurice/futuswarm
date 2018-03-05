@@ -1,0 +1,29 @@
+HTTP/1.0 503 Service Unavailable
+Cache-Control: no-cache
+Connection: close
+Content-Type: text/html
+
+<html>
+  <head>
+    <!-- Bootstrap -->
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <style>
+      body {
+        padding-top: 50px
+      }
+    </style>
+  </head>
+  <body>
+  <div class="container">
+      <div class="panel panel-warning">
+        <div class="panel-heading">
+          <h3 class="panel-title">Docker Flow Proxy: 503 Service Unavailable</h3>
+        </div>
+      <div class="panel-body">
+        No server is available to handle this request. The service you tried to reach is likely down.
+
+        Troubleshooting available at https://confluence.futurice.com/display/it/Trouble+shooting+for+any+service.play.futurice.com
+      </div>
+  </div>
+</body>
+</html>
