@@ -248,6 +248,12 @@ remote_registry_port=${REMOTE_REGISTRY_PORT:-$(($container_registry_port + $(( (
 cleanup_registry
 start_local_registry
 registry_port=$($DOCKER_CMD inspect $registry_container_name --format '{{json .}}'|jq -r '.NetworkSettings.Ports."5000/tcp"[].HostPort')
+
+if [ -z "$registry_port" ]; then
+    red "Error starting local Docker Registry. Please restart Docker."
+    safe_exit 1
+fi
+
 push_image_to_local_private_registry
 yellow "\nSending image '$1:$_arg_tag' to all nodes... (Note: first push of a new image takes some time)"
 # get node_list
@@ -296,7 +302,7 @@ start_local_registry() {
 if [ "$REGISTRY_UP" -ne 1 ]; then
     yellow "Running a Docker Registry at $registry_host:$registry_port..."
     $DOCKER_CMD run -d --mount type=tmpfs,destination=/var/lib/registry -e REGISTRY_STORAGE_FILESYSTEM_MAXTHREADS=150 --publish="$DOCKER_REGISTRY_HOST_BIND:$registry_port:$container_registry_port" --name $registry_container_name registry:2 || true
-    sleep 2 # need sleep when starting
+    sleep 3 # need sleep when starting
 fi
 }
 
