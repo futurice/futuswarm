@@ -114,7 +114,7 @@ $ORIGIN {{DOMAIN}}.
 
 Allows all specified users (and groups when using SSSD) to use the Swarm directly given they have an SSH key configured.
 
-The CLI is downloadable from `cli_location`. Welcome instructions at `echo https://futuswarm.$DOMAIN`.
+The CLI is downloadable from `cli_location`. Welcome instructions at `echo https://$DOMAIN`.
 
 As admin, add yourself and others (non-SSSD setup) with their SSH public keys. Assumes CLI downloaded as 'futuswarm':
 `SU=true SSH_USER=ubuntu SSH_KEY=$SSH_KEY futuswarm admin:user:add --user $USER --key $HOME/.ssh/id_rsa.pub`
