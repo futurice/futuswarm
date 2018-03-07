@@ -393,11 +393,16 @@ DEFAULT_SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_rsa}"
 add_ssh_key_to_agent "$DEFAULT_SSH_KEY"
 
 # CLI version check
+# - deployed CLIs have CLI_VERSION, dynamic check during development
+_cli_name=production
+if [[ -n "$CLI_VERSION" ]]; then
+    _cli_name="$(basename "$0")"
+fi
 _cli_version_check() {
-_CV="${CLI_VERSION:-$(cli_version)}"
-run_client $HOST '{"command":"cli:version-check","version":"'$_CV'"}'
+    local _CLI_VERSION="${CLI_VERSION:-$(cli_version)}"
+    run_client $HOST '{"command":"cli:version-check","version":"'$_CLI_VERSION'"}'
 }
-if [ -n "$(cli_version_check_needed)" ]; then
+if [ -n "$(cli_version_check_needed "$_cli_name")" ]; then
     green "Performing weekly CLI version check..."
     _cli_version_check
 fi

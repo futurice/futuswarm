@@ -478,21 +478,25 @@ validate_servicename() {
 }
 
 cli_version() {
-if [ -f "/tmp/.futuswarm_cli_version" ]; then
+# version of local CLI; prepare_cli keeps copy in /tmp/cli
+local _CLI_NAME="${1:-production}"
+if [ -f "/tmp/.$_CLI_NAME.cli.version" ]; then
     :
 else
-    cat /tmp/cli|base64|shasum -a 256|cut -d' ' -f1 > /tmp/.futuswarm_cli_version
+    cat /tmp/cli|base64|shasum -a 256|cut -d' ' -f1 > /tmp/.$_CLI_NAME.cli.version
 fi
-cat /tmp/.futuswarm_cli_version
+cat /tmp/.$_CLI_NAME.cli.version
 }
 
 cli_version_server() {
+# version of CLI available on server
 cat /opt/cli|grep ^CLI_VERSION|cut -d= -f2
 }
 
 cli_version_check_needed() {
 # daily: +"%d.%m.%Y" weekly: +%V
-local CHECKED="/tmp/.futuswarm.cli.check.$(date +%V)"
+local _CLI_NAME="$1"
+local CHECKED="/tmp/.$_CLI_NAME.cli.check.$(date +%V)"
 # TODO: remove old files
 if [ -f "$CHECKED" ]; then
     echo ""

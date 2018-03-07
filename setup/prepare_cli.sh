@@ -3,7 +3,7 @@ source init.sh
 
 # Prepare CLI for end users
 cp ../client/cli.sh /tmp/cli
-rm -f /tmp/.futuswarm_cli_version
+rm -f /tmp/.production.cli.version
 
 HOST="${HOST:-$(manager_ip)}"
 UPLOAD="${UPLOAD:-y}"
@@ -19,8 +19,8 @@ CS=open('commands.sh').read().replace('#!/usr/bin/env bash','')
 import commands;commands.replace_block('/tmp/cli','commands',CS);
 PEOF
 
-_CV="$(cli_version)"
-replaceinfile '/tmp/cli' '^CLI_VERSION=.*' "CLI_VERSION=$_CV"
+_CLI_VERSION="$(cli_version)"
+replaceinfile '/tmp/cli' '^CLI_VERSION=.*' "CLI_VERSION=$_CLI_VERSION"
 
 if [ "$UPLOAD" == "y" ]; then
     synchronize /tmp/cli /opt/ $HOST
