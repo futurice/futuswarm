@@ -228,16 +228,24 @@ run_client() {
     SSH_CMD="$(mk_ssh_cmd $1)"
     if [[ "${SU:-}" != "true" ]]; then
         _cmd=$(echo "$_cmd"|b64enc)
-        eval $SSH_CMD $_cmd
+        R=$(eval $SSH_CMD $_cmd)
     else
         # root SSH_USER does bypasses ForceCommand
         if [[ ! -n "${SU_DIRECT:-}" ]]; then
-            eval $SSH_CMD "bash -s" <<EOF
+            R=$(eval $SSH_CMD "bash -s" <<EOF
 $(su_remote_cmd "$_cmd")
 EOF
+)
         else
-            eval $SSH_CMD $_cmd
+            R=$(eval $SSH_CMD $_cmd)
         fi
+    fi
+    return_code="$?"
+    if [[ $return_code -eq 0 || $return_code -eq 1 ]]; then
+        echo "$R"
+    else
+        red "Connection Error ($return_code). Check your connection or contact support?"
+        exit $return_code
     fi
 }
 

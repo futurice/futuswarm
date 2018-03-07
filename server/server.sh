@@ -35,6 +35,7 @@ RDS_PASS=
 RDS_DB_NAME=
 ACL_DB_NAME=
 CORE_CONTAINERS=
+CONTAINER_PORT=
 # /GLOBALS
 
 
@@ -218,7 +219,7 @@ _arg_image=$(parse '.image')
 _arg_tag=$(parse '.tag')
 _arg_image_tag=$(parse '.image_tag')
 _arg_host=$(parse '.host')
-_arg_port=$(parse '.port')
+_arg_port=$(parse '.port // empty')
 _arg_size=$(parse '.size // empty')
 _arg_volume_name=$(parse '.volume_name')
 _arg_open=$(parse '.open // empty')
@@ -237,6 +238,9 @@ _arg_size=1
 fi
 if [[ "$_arg_env" == "" ]]; then
 _arg_env=$DEFAULT_ENV
+fi
+if [[ "$_arg_port" == "" ]]; then
+_arg_port=$CONTAINER_PORT
 fi
 
 admin_required() {
@@ -812,7 +816,7 @@ EOF
         fi
         ;;
     "swarm:network:health")
-        _SERVICE="${_arg_name:-futuswarm}"
+        _SERVICE="${_arg_name:-futuswarm-mainpage}"
         _PORT="${_arg_port:-8000}"
         yellow "Checking Docker Swarm networking health"
         yellow "HTTP GET from futuswarm-health (manager) => $_SERVICE:$_PORT"

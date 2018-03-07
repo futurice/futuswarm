@@ -95,6 +95,7 @@ _arg_placement=
 _arg_async=
 _arg_replicas=
 _arg_password=
+_arg_extra=
 
 DOCKER_CMD="$(docker_cmd)"
 

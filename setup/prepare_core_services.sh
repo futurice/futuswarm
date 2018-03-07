@@ -20,6 +20,15 @@ DFP_TAG="${DFP_TAG:-$(git rev-parse --short HEAD)}"
 docker build -t "$DFP_IMAGE:$DFP_TAG" . 1>/dev/null
 cd - 1>/dev/null
 
+cd ../client
+yellow "Pushing DFP docker image to Swarm..."
+start_sso_proxy() {
+( SU=true \
+    . ./cli.sh image:push -i "$DFP_IMAGE" -t "$DFP_TAG" )
+}
+start_sso_proxy
+cd - 1>/dev/null
+
 yellow "Building Single Sign On (sso-proxy) image..."
 SSO_IMAGE=futurice/sso-proxy
 SSO_NAME=sso-proxy

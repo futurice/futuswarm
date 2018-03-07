@@ -20,9 +20,7 @@ Content-Type: text/html
           <h3 class="panel-title">Docker Flow Proxy: 503 Service Unavailable</h3>
         </div>
       <div class="panel-body">
-        No server is available to handle this request. The service you tried to reach is likely down.
-
-        Troubleshooting available at https://confluence.futurice.com/display/it/Trouble+shooting+for+any+service.play.futurice.com
+        No server is available to handle this request. The service you tried to reach is likely down. Try again in a moment?
       </div>
   </div>
 </body>

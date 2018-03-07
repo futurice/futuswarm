@@ -25,6 +25,20 @@ EOF
 )
 _SERVICES_MOCK_NOHEADER="$(echo "$_SERVICES_MOCK")"
 
+_SERVICES_MOCK_SECRETS=$(cat <<EOF
+{"ID":"foiir9nzulhl","Image":"nginx:latest","Mode":"replicated","Name":"nginx-test","Ports":"","Replicas":"1/1"}
+{"ID":"foiir9nzulhl","Image":"mixman/http-hello:latest","Mode":"replicated","Name":"another-hello-test","Ports":"","Replicas":"1/1"}
+EOF
+)
+_SERVICES_MOCK_SECRETS_NOHEADER="$(echo "$_SERVICES_MOCK_SECRETS")"
+
+@test "Broken SSH connection gives error notice and exit code" {
+    run bash -c "HOST=doesnotexist client/cli.sh app:list"
+    [ "$status" -eq 255 ]
+    result=$(echo -e "$output"|grep "Connection Error")
+    [ "$?" -eq 0 ]
+}
+
 @test "Check /status page works" {
     run bash -c "curl -s localhost/status"
     [ "$status" -eq 0 ]
@@ -275,20 +289,22 @@ SERVICE_THREE="acl-multi-three"
     run bash -c "$(client) app:remove -n alpine-ping"
 }
 
-@test "Test admin migrate-services" {
-    run bash -c "cd setup/ && FROM_AWS_PROFILE=test CLOUD=test TO_AWS_PROFILE=test MOCK_SERVICES='$_SERVICES_MOCK_NOHEADER' bash admin.sh restore-services --to=/tmp/cli_local && cd -"
-    [ "$status" -eq 0 ]
-    SERVICE="another-hello-test"
-    run bash -c "docker service ps $SERVICE --format '{{.Name}} {{.DesiredState}}'|head -n1"
-    result=$(printf "$output"|grep "$SERVICE")
-    [ "$?" -eq 0 ]
-}
-
 @test "Test admin migrate-secrets" {
-    run bash -c "cd setup/ && FROM_AWS_PROFILE=test CLOUD=test TO_AWS_PROFILE=test MOCK_SECRETS='$_SECRETS_MOCK_NOHEADER' MOCK_SERVICES='$_SERVICES_MOCK_NOHEADER' bash admin.sh migrate-secrets --to=/tmp/cli_local && cd -"
+    run bash -c "$(client) app:remove -n another-hello-test"
+    run bash -c "$(client) app:remove -n nginx-test"
+    run bash -c "cd setup/ && FROM_AWS_PROFILE=dummy-test CLOUD=test TO_AWS_PROFILE=test MOCK_SECRETS='$_SECRETS_MOCK_NOHEADER' MOCK_SERVICES='$_SERVICES_MOCK_SECRETS_NOHEADER' bash admin.sh migrate-secrets --to=/tmp/cli_local && cd -"
     [ "$status" -eq 0 ]
     run bash -c "$(client) config:get DB_HOST -n another-hello-test"
     [ "$status" -eq 0 ]
     result=$(echo -e "$output"|grep "dbhost-in-cloud-aws")
+    [ "$?" -eq 0 ]
+}
+
+@test "Test admin migrate-services" {
+    run bash -c "cd setup/ && FROM_AWS_PROFILE=dummy-test CLOUD=test TO_AWS_PROFILE=test MOCK_SERVICES='$_SERVICES_MOCK_NOHEADER' MOCK_INSPECT='{}' bash admin.sh restore-services --to=/tmp/cli_local && cd -"
+    [ "$status" -eq 0 ]
+    SERVICE="another-hello-test"
+    run bash -c "docker service ps $SERVICE --format '{{.Name}} {{.DesiredState}}'|head -n1"
+    result=$(printf "$output"|grep "$SERVICE")
     [ "$?" -eq 0 ]
 }

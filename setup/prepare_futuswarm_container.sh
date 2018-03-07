@@ -48,22 +48,22 @@ FOOTER=$(cat <<EOF
 EOF
 )
 
-FS="futuswarm"
+IMAGE="futuswarm-mainpage"
 cd /tmp/container
 cat <(echo "$HEADER") index.html_ > index.html_2
 cat <(echo "$FOOTER") index.html_2 >> index.html
 git init . 1>/dev/null
 git add -A 1>/dev/null
 git commit -am "-.-" 1>/dev/null
-TAG=$(git rev-parse --short HEAD)
-docker build -t $FS:$TAG . 1> /dev/null
+IMAGE_TAG=$(git rev-parse --short HEAD)
+docker build -t $IMAGE:$IMAGE_TAG . 1> /dev/null
 cd - 1>/dev/null
 
-push_image $FS $TAG
+push_image $IMAGE $IMAGE_TAG
 
 cd ../client
-deploy_service $FS $TAG $FS 1>/dev/null &
-spinner $! "Deploying $FS:$TAG as mainpage"
+deploy_service $IMAGE $IMAGE_TAG $IMAGE 1>/dev/null &
+spinner $! "Deploying $IMAGE:$IMAGE_TAG as $IMAGE"
 cd - 1>/dev/null
 
 # exit virtualenv

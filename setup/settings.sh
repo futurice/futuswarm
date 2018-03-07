@@ -103,7 +103,7 @@ EOF
 )
 SWARM_NODE_LABEL_KEY=swarm-label
 SWARM_S3_BUCKET="com.futuswarm.$TAG.files"
-CORE_CONTAINERS="proxy swarm-listener futuswarm futuswarm-health sso-proxy"
+CORE_CONTAINERS="proxy swarm-listener futuswarm futuswarm-mainpage futuswarm-health sso-proxy"
 DOCKER_REGISTRY_PORT=5005
 
 #

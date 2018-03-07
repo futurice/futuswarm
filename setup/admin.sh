@@ -15,6 +15,7 @@ _arg_env=default
 _arg_value=
 _arg_new_value=
 _arg_legacy_docker=
+_arg_name=
 
 mk_virtualenv
 source venv/bin/activate
@@ -54,6 +55,8 @@ printf "\t%s\n" " check-for-value --value (--new-value)"
 print_example "? Check for deprecated configuration values and update as necessary"
 printf "\t%s\n" " check-for-key --value (--new-value)"
 print_example "? Check for deprecated configuration values by key names and update as necessary"
+printf "\t%s\n" " service-inspect -n NAME"
+print_example "? Check stored app:inspect data for service"
 }
 
 while test $# -gt 0; do
@@ -69,6 +72,8 @@ while test $# -gt 0; do
             _arg_value=$(arg_required value "$1" "$_two") || die
         ;; --new-value|--new-value=*)
             _arg_new_value=$(arg_required new-value "$1" "$_two") || die
+        ;; -n|--name=*)
+            _arg_name=$(arg_required name "$1" "$_two") || die
         ;; --legacy-docker)
             _arg_legacy_docker=true
         ;; --force)
@@ -102,7 +107,10 @@ TO_AWS_PROFILE="${TO_AWS_PROFILE:-$FROM_AWS_PROFILE}"
 FROM_AWS_PROFILE="${FROM_AWS_PROFILE:-$TO_AWS_PROFILE}"
 
 stored_services_list() {
-    AWS_PROFILE="$1" secret get $KEY --vaultkey="$KMS_ALIAS" --vault="$SECRETS_S3_BUCKET" --env "$_arg_env" --region "$SECRETS_REGION"
+    R=$(AWS_PROFILE="$1" secret get $KEY --vaultkey="$KMS_ALIAS" --vault="$SECRETS_S3_BUCKET" --env "$_arg_env" --region "$SECRETS_REGION")
+    if [[ "$?" == "0" ]]; then
+        echo "$R"
+    fi
 }
 
 running_services_list() {
@@ -113,6 +121,14 @@ service_secrets() {
     AWS_PROFILE="$1" secret config -P "$2" --vaultkey="$KMS_ALIAS" --vault="$SECRETS_S3_BUCKET" --env "$_arg_env" --region "$SECRETS_REGION" -F json
 }
 
+service_inspect() {
+    local _KEY="service-inspect-$2"
+    R=$(AWS_PROFILE="$1" secret get $_KEY --vaultkey="$KMS_ALIAS" --vault="$SECRETS_S3_BUCKET" --env "$_arg_env" --region "$SECRETS_REGION" -P futuswarm)
+    if [[ "$?" == "0" ]]; then
+        echo "$R"
+    fi
+}
+
 restore_services() {
 yellow "Restoring all known services using AWS-profile '$FROM_AWS_PROFILE' from futuswarm '$CLOUD' to futuswarm using CLI '$_arg_to' [env: $_arg_env]"
 SERVICES="${MOCK_SERVICES:-$(stored_services_list "$FROM_AWS_PROFILE")}"
@@ -121,23 +137,36 @@ while IFS= read -r line; do
     _image_tag="$(read_value "$line" ".Image" "5")"
     _image=$(echo $_image_tag|cut -f1 -d:)
     _tag=$(echo $_image_tag|cut -f2 -d:)
+
     if [[ -z "$_name" ]]; then
         red " unnamed service: $_image_tag"
         continue
     fi
+
     if [[ $(is_in_list "$_name" "$CORE_CONTAINERS") == "y" ]]; then
         green " skipping core container: $_name"
         continue
     fi
+
+    _INSPECT="${MOCK_INSPECT:-$(service_inspect "$FROM_AWS_PROFILE" "$_name")}"
+    _arg_port=$(echo $_INSPECT|jq -r '.Spec.Labels."com.df.port"//empty')
+    _arg_open=false
+    if [[ -n "$OPEN_DOMAIN" ]]; then
+        _arg_open=$(echo $_INSPECT|jq -r '.Spec.Labels."com.df.serviceDomain"//empty'|grep "$OPEN_DOMAIN" >/dev/null&&echo true||echo false)
+    fi
+    if [[ -z "$_arg_port" ]]; then
+        _arg_port=$DOCKER_CONTAINER_PORT
+    fi
+
     cd $CWD/../client
-    echo " restoring: $_name ($_image:$_tag)"
+    echo " restoring: $_name ($_image:$_tag) port:$_arg_port open:$_arg_open"
     if [ -n "$_arg_noop" ]; then
         continue
     fi
     if [ -n "$_arg_force" ]; then
-        echo ""|bash -c "$_arg_to app:rm --name $_name"
+        echo ""|bash -c "$_arg_to app:remove --name $_name"
     fi
-    echo ""|bash -c "$_arg_to app:deploy --name $_name --image $_image --tag $_tag"
+    echo ""|bash -c "$_arg_to app:deploy --name $_name --image $_image --tag $_tag --port=$_arg_port --open=$_arg_open"
     cd - 1>/dev/null
 done <<< "$SERVICES"
 }
@@ -290,6 +319,10 @@ stored_services_list "$FROM_AWS_PROFILE"
 ;; running-services)
 exit_on_undefined "$_arg_from" "--from"
 running_services_list
+
+;; service-inspect)
+exit_on_undefined "$FROM_AWS_PROFILE" "FROM_AWS_PROFILE="
+service_inspect "$FROM_AWS_PROFILE" "$_arg_name"
 
 ;; check-for-value)
 exit_on_undefined "$_arg_value" "--value"
