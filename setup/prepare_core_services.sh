@@ -10,7 +10,7 @@ rm -rf /tmp/docker-flow-proxy
 cp -R ../docker-flow-proxy /tmp/docker-flow-proxy/
 # CONFIG_DIR overrides
 if [ -d "$CDIR/docker-flow-proxy/" ]; then
-    cp $CDIR/docker-flow-proxy/* /tmp/docker-flow-proxy/
+    cp -R $CDIR/docker-flow-proxy/* /tmp/docker-flow-proxy/
 fi
 cd /tmp/docker-flow-proxy
 git init . 1>/dev/null
@@ -110,7 +110,12 @@ fi
 SERVICE_EXISTS="$(does_service_exist proxy)"
 rg_status "$SERVICE_EXISTS" "Docker Flow Proxy: 'proxy' is a Swarm service"
 if [[ -n "$SERVICE_EXISTS" ]]; then
-    :
+yellow " updating Docker Flow Proxy (proxy) service"
+REMOTE=$(cat <<EOF
+docker service update --image $DFP_IMAGE:$DFP_TAG proxy
+EOF
+)
+SSH_ARGS="-t sudo" sudo_client "$HOST" "'$REMOTE'"
 else
 yellow " creating Docker Flow Proxy (proxy) service"
 # Configuration documentation:
