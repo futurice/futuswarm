@@ -18,6 +18,7 @@ replaceinfile '/tmp/server' '^OPEN_DOMAIN=.*' "OPEN_DOMAIN=\"$OPEN_DOMAIN\""
 replaceinfile '/tmp/server' '^SWARM_MAP=.*' "SWARM_MAP=\"$SWARM_MAP\""
 replaceinfile '/tmp/server' '^CLOUD=.*' "CLOUD=$CLOUD"
 replaceinfile '/tmp/server' '^CORE_CONTAINERS=.*' "CORE_CONTAINERS=\"$CORE_CONTAINERS\""
+replaceinfile '/tmp/server' '^CONTAINER_PORT=.*' "CONTAINER_PORT=$DOCKER_CONTAINER_PORT"
 # RDS:postgres
 replaceinfile '/tmp/server' '^RDS_USER=.*' "RDS_USER=${RDS_USER:-}"
 replaceinfile '/tmp/server' '^RDS_PASS=.*' "RDS_PASS='${RDS_PASS:-}'"

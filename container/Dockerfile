@@ -3,9 +3,9 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && apt-get install -y \
     python
 
-ADD start.sh /
-ADD index.html /
-ADD index.css /
+COPY start.sh /
+COPY index.html /
+COPY index.css /
 
 EXPOSE 8000
 
