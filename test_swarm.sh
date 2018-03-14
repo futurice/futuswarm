@@ -289,6 +289,11 @@ SERVICE_THREE="acl-multi-three"
     run bash -c "$(client) app:remove -n alpine-ping"
 }
 
+@test "Test app:shell connects OK" {
+    run bash -c "$(client) app:shell -n $SERVICE <<< exit"
+    [ "$status" -eq 0 ]
+}
+
 @test "Test admin migrate-secrets" {
     run bash -c "$(client) app:remove -n another-hello-test"
     run bash -c "$(client) app:remove -n nginx-test"

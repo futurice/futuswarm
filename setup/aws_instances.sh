@@ -21,6 +21,10 @@ proxy_elb() {
     elbs|jq '.LoadBalancerDescriptions'|jq "map(select(.LoadBalancerName==\"$1\"))|first // empty"
 }
 
+proxy_elbv2() {
+    v2elbs|jq '.LoadBalancers'|jq "map(select(.LoadBalancerName==\"$1\"))|first // empty"
+}
+
 proxy_ip() {
     echo $(stdin)|jq -r '.DNSName'
 }

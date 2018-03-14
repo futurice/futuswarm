@@ -228,21 +228,20 @@ run_client() {
     SSH_CMD="$(mk_ssh_cmd $1)"
     if [[ "${SU:-}" != "true" ]]; then
         _cmd=$(echo "$_cmd"|b64enc)
-        R=$(eval $SSH_CMD $_cmd)
+        eval $SSH_CMD $_cmd
     else
         # root SSH_USER does bypasses ForceCommand
         if [[ ! -n "${SU_DIRECT:-}" ]]; then
-            R=$(eval $SSH_CMD "bash -s" <<EOF
+            eval $SSH_CMD "bash -s" <<EOF
 $(su_remote_cmd "$_cmd")
 EOF
-)
         else
-            R=$(eval $SSH_CMD $_cmd)
+            eval $SSH_CMD $_cmd
         fi
     fi
     return_code="$?"
     if [[ $return_code -eq 0 || $return_code -eq 1 ]]; then
-        echo "$R"
+        :
     else
         red "Connection Error ($return_code). Check your connection or contact support?"
         exit $return_code
@@ -509,12 +508,12 @@ fi
 mk_virtualenv() {
 if [ ! -d venv ]; then
     yellow "Creating virtualenv..."
-    pip install -q virtualenv
+    pip install virtualenv
     virtualenv venv 1>/dev/null
     source venv/bin/activate
-    pip install -q ansible==2.4.2.0 awscli==1.14.1 cryptography==2.1.4 secret==0.8
+    pip install ansible==2.4.2.0 awscli==1.14.1 cryptography==2.1.4 secret==0.8 markdown==2.6.11
     # awscli installs a boto3 that is too old to be compatible
-    pip install -q boto3==1.4.8
+    pip install boto3==1.4.8
     deactivate
 fi
 }

@@ -11,11 +11,15 @@ nl2space() {
 }
 
 tag_with_futuswarm() {
-    aws ec2 create-tags --resources $1 --tags Key=$TAG_KEY,Value=$TAG
+    aws ec2 create-tags --resources "$1" --tags Key=$TAG_KEY,Value=$TAG
 }
 
 tag_elb_with_futuswarm() {
-    aws elb add-tags --load-balancer-names $1 --tags Key=$TAG_KEY,Value=$TAG
+    aws elb add-tags --load-balancer-names "$1" --tags Key=$TAG_KEY,Value=$TAG
+}
+
+tag_elbv2_with_futuswarm() {
+    aws elbv2 add-tags --resource-arns "$1" --tags "Key=$TAG_KEY,Value=$TAG"
 }
 
 ec2_ids() {
@@ -176,6 +180,27 @@ elbs() {
 elb() {
     aws elb describe-load-balancers --load-balancer-names "$1"
 }
+
+v2elbs() {
+    aws elbv2 describe-load-balancers
+}
+
+v2elb() {
+    aws elbv2 describe-load-balancers --names "$1"
+}
+
+v2elb_arn() {
+    echo $(stdin)|jq -r '.LoadBalancers[]|.LoadBalancerArn'
+}
+
+v2elb_target_groups() {
+aws elbv2 describe-target-groups
+}
+
+v2elb_target_group_arn() {
+    echo $(stdin)|jq -r '.TargetGroups[]|.TargetGroupArn'
+}
+
 
 jq_elb_dnsname() {
     echo $(stdin)|jq -r '.LoadBalancerDescriptions|first|.DNSName'
@@ -402,4 +427,41 @@ replaceinfile $F 'AWS_REGION' "$AWS_REGION"
 
 get_sg_tag() {
 echo $(stdin)|jq -r ".SecurityGroups[].Tags[]|select(.Key==\"$1\")|.Value // empty"
+}
+
+acm_certs() {
+echo $(aws acm list-certificates)
+}
+
+domain_mild() {
+echo "${1/\*./}"
+}
+
+acm_cert_exists() {
+local _DOMAIN="${1:-$ELB_DOMAIN}"
+local _DOMAIN_MILD="$(domain_mild "$_DOMAIN")"
+ACM_CERTS="$(acm_certs)"
+echo $ACM_CERTS|jq -r ".CertificateSummaryList[]|select(.DomainName==\"$_DOMAIN_MILD\")"
+}
+
+acm_arn() {
+local _DOMAIN="${1:-$ELB_DOMAIN}"
+ACM_CERT_EXISTS="$(acm_cert_exists "$_DOMAIN")"
+echo $ACM_CERT_EXISTS|jq -r '.CertificateArn'
+}
+
+acm_cert() {
+local _ARN="${1}"
+echo "$(aws acm describe-certificate --certificate-arn "$_ARN")"
+}
+
+acm_cert_status() {
+local _CERT="${1:-$ACM_CERT}"
+echo $ACM_CERT|jq -r '.Certificate.Status'
+}
+
+acm_cert_issued() {
+local _CERT="${1:-$ACM_CERT}"
+local _IS_ISSUED=$(acm_cert_status "$_CERT")
+echo $(if [[ "$_IS_ISSUED" == "ISSUED" ]]; then echo "ok"; else echo ""; fi)
 }

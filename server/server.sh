@@ -425,7 +425,7 @@ sudo bash -c "echo \"$_arg_user ALL=(ALL) NOPASSWD: /usr/bin/docker, /usr/bin/ti
 }
 
 rm_user() {
-sudo bash -c "userdel -r"
+sudo bash -c "userdel -r $_arg_user"
 }
 
 change_user_pubkey() {
@@ -649,11 +649,14 @@ case "$_arg_cmd" in
         cando
         determine_node
         CMD='{"command":"app:run:exec","name":"'$CONTAINER_NAME'","action":"'$_arg_action'"}'
+        yellow "Found '$CONTAINER_NAME' in $NODE_NAME"
         SSH_ARGS="-p $CONTAINER_NODE_SSH_PORT" run_client $CONTAINER_NODE_IP "$CMD"
         ;;
     "app:run:exec")
+        _CONTAINER_ID="$(sudo docker ps --format '{{json .}}'|jq -r 'select(.Names|startswith("'$_arg_name'"))|.ID')"
+        yellow "Running '$_arg_action' in '$_arg_name' container"
         sudo docker exec \
-            $(sudo docker ps --format '{{json .}}'|jq -r 'select(.Names|startswith("'$_arg_name'"))|.ID') \
+            "$_CONTAINER_ID" \
             sh -c "$_arg_action"
         ;;
     "app:shell")
@@ -662,11 +665,14 @@ case "$_arg_cmd" in
         cando
         determine_node
         CMD='{"command":"app:shell:exec","name":"'$CONTAINER_NAME'"}'
+        yellow "Found '$CONTAINER_NAME' in $NODE_NAME"
         SSH_ARGS="-p $CONTAINER_NODE_SSH_PORT -tt" run_client $CONTAINER_NODE_IP $CMD
         ;;
     "app:shell:exec")
+        _CONTAINER_ID="$(sudo docker ps --format '{{json .}}'|jq -r 'select(.Names|startswith("'$_arg_name'"))|.ID')"
+        yellow "Accessing '$_arg_name' in container '$_CONTAINER_ID'"
         sudo docker exec -it \
-            $(sudo docker ps --format '{{json .}}'|jq -r 'select(.Names|startswith("'$_arg_name'"))|.ID') \
+            "$_CONTAINER_ID" \
             sh
         ;;
     "volume:create:ebs")
@@ -770,7 +776,7 @@ EOF
         add_user
         DO='{"command":"admin:user:add:self","user":"'$_arg_user'","key":"'$_arg_key'"}'
         for ip in ${NODE_LIST[@]}; do
-            SU=1 run_client $ip "$DO"
+            SU=true run_client $ip "$DO"
         done
         ;;
     "admin:user:add:self")
@@ -783,7 +789,7 @@ EOF
         rm_user
         DO='{"command":"admin:user:rm:self","user":"'$_arg_user'"}'
         for ip in ${NODE_LIST[@]}; do
-            SU=1 run_client $ip "$DO"
+            SU=true run_client $ip "$DO"
         done
         ;;
     "admin:user:rm:self")
@@ -796,7 +802,7 @@ EOF
         change_user_pubkey
         DO='{"command":"admin:user:key:set:self","user":"'$_arg_user'","key":"'$_arg_key'"}'
         for ip in ${NODE_LIST[@]}; do
-            SU=1 run_client $ip "$DO"
+            SU=true run_client $ip "$DO"
         done
         ;;
     "admin:user:key:set:self")

@@ -16,7 +16,7 @@ _RDS_SUBNET_GROUPS=$(aws rds describe-db-subnet-groups)
 _RDS_SUBNET_GROUP=$(echo "$_RDS_SUBNET_GROUPS"|jq -r ".DBSubnetGroups|map(select(.DBSubnetGroupName==\"$RDS_SUBNET_GROUP_NAME\"))|first // empty")
 rg_status "$_RDS_SUBNET_GROUP" "RDS subnet group found ($RDS_SUBNET_GROUP_NAME)"
 if [ -z "$_RDS_SUBNET_GROUP" ]; then
-_RDS_SUBNET_GROUP=$(aws rds create-db-subnet-group --db-subnet-group-name $RDS_SUBNET_GROUP_NAME \
+    _RDS_SUBNET_GROUP=$(aws rds create-db-subnet-group --db-subnet-group-name $RDS_SUBNET_GROUP_NAME \
           --db-subnet-group-description $TAG \
           --subnet-ids $SUBNET_IDS \
           --tags Key=Name,Value=$TAG)
@@ -38,21 +38,21 @@ _RDS_INSTANCES=$(aws rds describe-db-instances)
 _RDS_INSTANCE=$(echo "$_RDS_INSTANCES"|jq -r ".DBInstances|map(select(.DBInstanceIdentifier==\"$RDS_NAME\"))|first // empty")
 rg_status "$_RDS_INSTANCE" "RDS instance found ($RDS_NAME)"
 if [ -z "$_RDS_INSTANCE" ]; then
-_RDS_INSTANCE=$(aws rds create-db-instance --db-instance-identifier $RDS_NAME \
-    --allocated-storage $RDS_STORAGE \
-    --db-instance-class $RDS_INSTANCE \
-    --engine $RDS_ENGINE \
-    --engine-version $RDS_ENGINE_VERSION \
-    --storage-type $RDS_STORAGE_TYPE \
-    --db-subnet-group-name $RDS_SUBNET_GROUP_NAME \
-    --vpc-security-group-ids $RDS_SG_ID \
-    --tags Key=Name,Value=$TAG \
-    --preferred-maintenance-window $RDS_PREFERRED_MAINTENANCE_PERIOD \
-    --preferred-backup-window $RDS_PREFERRED_BACKUP_WINDOW \
-    --master-username "$RDS_USER" \
-    --master-user-password "$RDS_PASS")
+    _RDS_INSTANCE=$(aws rds create-db-instance --db-instance-identifier $RDS_NAME \
+        --allocated-storage $RDS_STORAGE \
+        --db-instance-class $RDS_INSTANCE \
+        --engine $RDS_ENGINE \
+        --engine-version $RDS_ENGINE_VERSION \
+        --storage-type $RDS_STORAGE_TYPE \
+        --db-subnet-group-name $RDS_SUBNET_GROUP_NAME \
+        --vpc-security-group-ids $RDS_SG_ID \
+        --tags Key=Name,Value=$TAG \
+        --preferred-maintenance-window $RDS_PREFERRED_MAINTENANCE_PERIOD \
+        --preferred-backup-window $RDS_PREFERRED_BACKUP_WINDOW \
+        --master-username "$RDS_USER" \
+        --master-user-password "$RDS_PASS")
 
-wait_for condition_rds_up "$RDS_NAME" "Waiting for RDS '$RDS_NAME' to come online (takes several minutes)" 20
+    wait_for condition_rds_up "$RDS_NAME" "Waiting for RDS '$RDS_NAME' to come online (takes several minutes)" 20
 fi
 
 RDS_HOSTNAME="$(rds_db_host $RDS_NAME)"
