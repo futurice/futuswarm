@@ -193,8 +193,9 @@ v2elb_arn() {
     echo $(stdin)|jq -r '.LoadBalancers[]|.LoadBalancerArn'
 }
 
+# 1: name
 v2elb_target_groups() {
-aws elbv2 describe-target-groups
+aws elbv2 describe-target-groups --names "$1"
 }
 
 v2elb_target_group_arn() {

@@ -40,7 +40,7 @@ aws elbv2 create-target-group --name "$ELB_NAME" \
     --health-check-path "/status" \
     --health-check-port 80 \
     --vpc-id "$VPC_ID"
-_TG_ARN="$(v2elb_target_groups --names "$ELB_NAME"|v2elb_target_group_arn)"
+_TG_ARN="$(v2elb_target_groups "$ELB_NAME"|v2elb_target_group_arn)"
 
 INSTANCES=$(proxy_instances)
 IDS=$(echo $INSTANCES|jq -r '.Reservations[].Instances[].InstanceId')
