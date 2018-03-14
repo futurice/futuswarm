@@ -1,2 +1,4 @@
 setup/venv
 *.pyc
+websocket-test/node_modules
+websocket-test/package-lock.json

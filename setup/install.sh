@@ -149,7 +149,7 @@ done
 wait $(jobs -p)
 
 yellow "Prepare Elastic Load Balancer (ELB)..."
-( . ./prepare_elb.sh )
+( . ./prepare_elbv2.sh )
 
 yellow "Install Docker '$DOCKER_VERSION' on all Swarm instances..."
 for ip in ${NODE_LIST[@]}; do

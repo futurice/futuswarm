@@ -464,7 +464,7 @@ SSH_ARGS="-tt" run_client "$HOST" "$DO"
 ;; app:shell)
 exit_on_undefined "$_arg_name" "--name"
 DO='{"command":"app:shell","name":"'$_arg_name'"}'
-SSH_ARGS="-tt" run_client $HOST "$DO"
+SSH_ARGS="${SSH_ARGS:--tt}" run_client $HOST "$DO"
 
 ;; swarm:nodes)
 run_client $HOST '{"command":"swarm:node:list"}'

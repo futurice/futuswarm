@@ -46,6 +46,12 @@ def stdin_to_json_newlined_objects():
     data = ''.join([k.rstrip("\n") for k in sys.stdin.readlines() if k])
     print(to_json_newlined_objects(from_json(data)))
 
+def stdin_to_id_keyed_values():
+    print(' '.join(["Id=%s"%k.rstrip("\n") for k in sys.stdin.readlines() if k]))
+
 if __name__ == "__main__":
+    # TODO: call argv[1] by default?
     if len(sys.argv)>1 and sys.argv[1] == 'stdin_to_json_newlined_objects':
         stdin_to_json_newlined_objects()
+    if len(sys.argv)>1 and sys.argv[1] == 'stdin_to_id_keyed_values':
+        stdin_to_id_keyed_values()

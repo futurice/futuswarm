@@ -26,7 +26,7 @@ replaceinfile '/tmp/container/index.md' 'OPEN_DOMAIN' "$OPEN_DOMAIN"
 replaceinfile '/tmp/container/index.md' 'DOMAIN' "$DOMAIN"
 
 # .md -> .html
-markdown2 /tmp/container/index.md > /tmp/container/index.html
+python -m markdown /tmp/container/index.md > /tmp/container/index.html
 
 mv /tmp/container/index.html /tmp/container/index.html_
 HEADER=$(cat <<EOF

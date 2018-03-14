@@ -20,6 +20,24 @@ teardown() {
 log "teardown: $BATS_TEST_NAME"
 }
 
+
+CLOUD=test
+SSH_PORT_SERVER=2222
+SSH_PORT_WORKER=2223
+HOST=localhost
+REMOTE_REGISTRY_PORT=$DOCKER_REGISTRY_PORT
+SSH_KEY="$(pwd)/server/server-key-for-tests"
+NODE_LIST="localhost"
+RESTART_SSH=false
+AWS_DEFAULT_REGION=eu-west-1
+AWS_ACCESS_KEY_ID="$AWS_KEY"
+AWS_SECRET_ACCESS_KEY="$AWS_SECRET"
+SWARM_MAP="${SWARM_MAP:-docker.for.mac.host.internal:2223,worker-1}"
+DOCKER_HOST_ADDR="$(echo "$SWARM_MAP"|cut -d, -f1)"
+WORKER_NODES="$DOCKER_HOST_ADDR"
+SSH_FLAGS="${SSH_FLAGS:--o UserKnownHostsFile=/dev/null}"
+NODE_LIST_PUBLIC="${NODE_LIST_PUBLIC:-localhost:2222 localhost:2223}"
+
 UP="${UP:-}"
 function ensure_container_running {
     if [ -z "$UP" ]; then
@@ -39,21 +57,6 @@ function ensure_container_running {
         # local postgres (RDS mock)
         docker rm -f -v futuswarm-postgres >&/dev/null||true
         docker run --restart always --name futuswarm-postgres -e POSTGRES_PASSWORD="$RDS_PASS" -p 127.0.0.1:"$RDS_PORT":5432 -d postgres:9.6.3 >&/dev/null||true
-
-        CLOUD=test
-        SSH_PORT_SERVER=2222
-        SSH_PORT_WORKER=2223
-        HOST=localhost
-        REMOTE_REGISTRY_PORT=$DOCKER_REGISTRY_PORT
-        SSH_KEY="$(pwd)/server/server-key-for-tests"
-        NODE_LIST="localhost"
-        RESTART_SSH=false
-        AWS_DEFAULT_REGION=eu-west-1
-        AWS_ACCESS_KEY_ID="$AWS_KEY"
-        AWS_SECRET_ACCESS_KEY="$AWS_SECRET"
-        DOCKER_HOST_ADDR="$(echo "$SWARM_MAP"|cut -d, -f1)"
-        WORKER_NODES="$DOCKER_HOST_ADDR"
-        NODE_LIST_PUBLIC="$NODE_LIST_PUBLIC"
 
         log "swarm:init"
         docker swarm init >&/dev/null||true
@@ -127,6 +130,9 @@ EOF
 
         log "manager:futuswarm_container"
         ( SSH_PORT=$SSH_PORT_SERVER SSH_USER=root . ./prepare_futuswarm_container.sh )
+
+        log "manager:prepare websocket-test"
+        ( SSH_PORT=$SSH_PORT_SERVER SSH_USER=root . ./prepare_websocket_test.sh )
 
         log "manager:futuswarm_health_container"
         ( SSH_PORT=$SSH_PORT_SERVER SSH_USER=root . ./prepare_futuswarm_health_container.sh )
