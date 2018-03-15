@@ -235,12 +235,13 @@ for ip in ${_IPS[@]}; do
 done
 
 yellow "Checking ELB instance health..."
-HEALTH="$(aws elb describe-instance-health --load-balancer-name $ELB_NAME)"
-for k in $(echo $HEALTH|jq -r '.InstanceStates[]|[.InstanceId,.State]|@csv'|tr '\n' ' '|sed 's/"//g'); do
-    ELB_ID="$(echo $k|cut -f1 -d,)"
-    ELB_ST="$(echo $k|cut -f2 -d,)"
-    R=$(test "$ELB_ST" = "InService")
-    rg_status "$(exit_code_ok $? 0)" "LB listener instance '$ELB_ID' is healthy"
+_TG_ARN="$(v2elb_target_groups "$ELB_NAME"|v2elb_target_group_arn)"
+HEALTH="$(aws elbv2 describe-target-health --target-group-arn "$_TG_ARN")"
+for k in $(echo $HEALTH|jq -r '.TargetHealthDescriptions[]|[.Target.Id,.TargetHealth.State]|@csv'|tr '\n' ' '|sed 's/"//g'); do
+    INSTANCE_ID="$(echo $k|cut -f1 -d,)"
+    INSTANCE_ST="$(echo $k|cut -f2 -d,)"
+    R=$(test "$INSTANCE_ST" = "healthy")
+    rg_status "$(exit_code_ok $? 0)" "ELB '$ELB_NAME' listener '$INSTANCE_ID' is healthy"
 done
 
 yellow "Checking Swarm health..."
