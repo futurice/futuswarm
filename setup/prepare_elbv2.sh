@@ -20,13 +20,13 @@ rg_status "$ELB_IP" "Elastic Load Balancer (ELB) '$ELB_NAME' is up"
 if [ -z "$ELB_IP" ]; then
     yellow "Creating ELB '$ELB_NAME'"
     _SUBNETS=$(subnets|jq -r '.Subnets[]|.SubnetId')
-    _ELB_ARN="$(aws elbv2 create-load-balancer \
+    _ELB_DATA="$(aws elbv2 create-load-balancer \
         --name "$ELB_NAME"  \
         --type application \
         --scheme internet-facing \
         --subnets $_SUBNETS \
         --security-groups "$(sg|sg_id)" "$(sg_elb|sg_id)")"
-    tag_elbv2_with_futuswarm "$_ELB_ARN"
+    tag_elbv2_with_futuswarm "$(echo "$_ELB_DATA"|v2elb_arn)"
 fi
 
 _ELB_ARN="$(v2elb "$ELB_NAME"|v2elb_arn)"
