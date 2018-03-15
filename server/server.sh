@@ -596,7 +596,7 @@ case "$_arg_cmd" in
         ;;
     "app:logs")
         cando
-        sudo timeout 5 docker service logs -t --tail 500 $_arg_name
+        sudo timeout 5 docker service logs -t --since 24h --tail 500 $_arg_name
         ;;
     "app:inspect")
         cando
