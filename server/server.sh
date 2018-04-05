@@ -84,7 +84,7 @@ if [[ -n "$(is_admin)" ]]; then
         _PLACEMENT="--placement-pref 'spread=node.labels.$_arg_placement'"
     fi
 fi
-sudo bash -c "HOME=/root/ docker service update $ENVIRON_VARS $_PLACEMENT --label-add com.df.serviceDomain="$(get_domains)" --with-registry-auth --image $_arg_image:$_arg_tag $_arg_name $DOCKER_DETACH" 2>/dev/null
+sudo bash -c "HOME=/root/ docker service update $ENVIRON_VARS $_PLACEMENT --update-order=start-first --label-add com.df.serviceDomain="$(get_domains)" --with-registry-auth --image $_arg_image:$_arg_tag $_arg_name $DOCKER_DETACH" 2>/dev/null
 }
 
 get_domains() {
@@ -114,7 +114,7 @@ restart_service() {
 R=$(sudo docker service ps $_arg_name -q >&/dev/null)
 if [[ "$?" == 0 ]]; then
     ENVIRON_VARS="$(get_secrets|sed 's/-e /--env-add /g')"
-    sudo bash -c "HOME=/root/ docker service update $ENVIRON_VARS --force $_arg_name $DOCKER_DETACH" 2>/dev/null
+    sudo bash -c "HOME=/root/ docker service update $ENVIRON_VARS --update-order=start-first --force $_arg_name $DOCKER_DETACH" 2>/dev/null
 fi
 }
 
