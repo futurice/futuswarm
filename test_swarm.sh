@@ -7,7 +7,7 @@ source test_init.sh
 # echo "output = ${output}"
 
 @test "Initialize" {
-    # prepare environment
+    echo "Preparing test environment"
     ensure_container_running
 }
 
@@ -142,8 +142,7 @@ SERVICE_THREE="acl-multi-three"
 @test "Test accessing a service and executing 'uname' command" {
     run bash -c "$(client) app:run --action uname -n $SERVICE"
     [ "$status" -eq 0 ]
-    S="Linux"
-    result=$(printf "$output"|grep "$S")
+    result=$(printf "$output"|grep "Linux")
     [ "$?" -eq 0 ]
 }
 

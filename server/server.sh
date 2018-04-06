@@ -19,12 +19,12 @@ printf -v CLIENT_COMMAND "%s" "$COMMAND"
 $log $IP $USER "$CLIENT_COMMAND"||true
 
 # GLOBALS
-NODE_LIST=docker.for.mac.localhost:2223
-NODE_LIST_PUBLIC="docker.for.mac.localhost:2223 docker.for.mac.localhost:2222"
+NODE_LIST=host.docker.internal:2223
+NODE_LIST_PUBLIC="host.docker.internal:2223 host.docker.internal:2222"
 ADMIN_LIST="ubuntu"
 DOMAIN=localhost
 OPEN_DOMAIN=
-SWARM_MAP="docker.for.mac.localhost:2223,worker-1"
+SWARM_MAP="host.docker.internal:2223,worker-1"
 DEFAULT_SSH_PORT=22
 DEFAULT_ENV=default
 CLOUD=futuswarm
@@ -653,7 +653,7 @@ case "$_arg_cmd" in
         SSH_ARGS="-p $CONTAINER_NODE_SSH_PORT" run_client $CONTAINER_NODE_IP "$CMD"
         ;;
     "app:run:exec")
-        _CONTAINER_ID="$(sudo docker ps --format '{{json .}}'|jq -r 'select(.Names|startswith("'$_arg_name'"))|.ID')"
+        _CONTAINER_ID="$(sudo docker ps --format '{{json .}}'|jq -r 'select(.Names|startswith("'$_arg_name'"))|.ID'|head -n1)"
         yellow "Running '$_arg_action' in '$_arg_name' container"
         sudo docker exec \
             "$_CONTAINER_ID" \
@@ -669,7 +669,7 @@ case "$_arg_cmd" in
         SSH_ARGS="-p $CONTAINER_NODE_SSH_PORT -tt" run_client $CONTAINER_NODE_IP $CMD
         ;;
     "app:shell:exec")
-        _CONTAINER_ID="$(sudo docker ps --format '{{json .}}'|jq -r 'select(.Names|startswith("'$_arg_name'"))|.ID')"
+        _CONTAINER_ID="$(sudo docker ps --format '{{json .}}'|jq -r 'select(.Names|startswith("'$_arg_name'"))|.ID'|head -n1)"
         yellow "Accessing '$_arg_name' in container '$_CONTAINER_ID'"
         sudo docker exec -it \
             "$_CONTAINER_ID" \

@@ -32,7 +32,7 @@ RESTART_SSH=false
 AWS_DEFAULT_REGION=eu-west-1
 AWS_ACCESS_KEY_ID="$AWS_KEY"
 AWS_SECRET_ACCESS_KEY="$AWS_SECRET"
-SWARM_MAP="${SWARM_MAP:-docker.for.mac.host.internal:2223,worker-1}"
+SWARM_MAP="${SWARM_MAP:-host.docker.internal:2223,worker-1}"
 DOCKER_HOST_ADDR="$(echo "$SWARM_MAP"|cut -d, -f1)"
 WORKER_NODES="$DOCKER_HOST_ADDR"
 SSH_FLAGS="${SSH_FLAGS:--o UserKnownHostsFile=/dev/null}"
