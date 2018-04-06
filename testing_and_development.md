@@ -12,7 +12,7 @@ There seems to be a fork with improvements at https://github.com/bats-core/bats-
 ## Run unit tests
 
 This example uses specifics for Docker MacOS. Adjust to meet Linux/Windows equivalents.
-* MacOS docker host hostname is "docker.for.mac.localhost", just "localhost" for Linux and ? for Windows.
+* MacOS Docker Host hostname is "host.docker.internal" and "localhost" for Linux.
 
 ```sh
 CLOUD=test \
@@ -23,8 +23,8 @@ CLOUD=test \
     REGISTRY_PASS='' \
     RDS_USER='' \
     RDS_PASS='' \
-    RDS_HOST="docker.for.mac.localhost" \
-    SWARM_MAP="docker.for.mac.localhost:2223,worker-1" \
+    RDS_HOST="host.docker.internal" \
+    SWARM_MAP="host.docker.internal:2223,worker-1" \
     SSH_FLAGS="-o UserKnownHostsFile=/dev/null" \
     bats test_swarm.sh
 ```
