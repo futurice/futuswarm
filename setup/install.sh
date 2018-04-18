@@ -20,7 +20,8 @@ printf "\t%s\n" "--vault-pass: (optional) Vault password for acquiring Ansible s
 printf "\t%s\n" "--registry-user: Docker Hub username"
 printf "\t%s\n" "--registry-pass: Docker Hub password"
 printf "\t%s\n" "--force-new-cluster: Destroy existing Swarm and create a new one"
-printf "\t%s\n" "--use-sssd: use SSSD"
+printf "\t%s\n" "--use-sssd: use SSSD (default: false)"
+printf "\t%s\n" "--cloudwatch-logs [true/false]: use CloudWatch logs (default: true)"
 printf "\t%s\n" "-h,--help: Prints help"
 }
 
@@ -41,6 +42,7 @@ _arg_registry_user=
 _arg_registry_pass=
 _arg_force_new_cluster=
 _arg_use_sssd=
+_arg_cloudwatch_logs=true
 
 while test $# -gt 0; do
     _key="$1"
@@ -59,6 +61,9 @@ while test $# -gt 0; do
             _arg_force_new_cluster="1"
         ;; --use-sssd)
             _arg_use_sssd=true
+        ;; --cloudwatch-logs|--cloudwatch-logs=*)
+            _arg_cloudwatch_logs=$(arg_required "${_key##--cloudwatch-logs=}" $1 "${2:-}") || die
+            # TODO: assert true|false given as input
         ;; -h|--help)
             print_help
             exit 0
@@ -69,8 +74,6 @@ while test $# -gt 0; do
     shift
 done
 
-exit_on_undefined "$_arg_aws_key" "--aws-key"
-exit_on_undefined "$_arg_aws_secret" "--aws-secret"
 exit_on_undefined "$_arg_vault_pass" "--vault-pass"
 exit_on_undefined "$_arg_vault_pass" "--registry-user"
 exit_on_undefined "$_arg_vault_pass" "--registry-pass"
@@ -113,12 +116,59 @@ yellow "Using Settings: $CDIR"
 yellow "Check local configuration..."
 check_env
 
+# Cleanup slate from possible previous installations
+# - virtualenv: dependencies might be old, or an aborted installation left virtualenv in zombie state
+rm -rf venv/
+
+yellow "Checking IAM user '$IAM_USER' existence"
+AWS_USER_ARN=$(aws iam get-user --user-name="$IAM_USER"|jq -r '.User.Arn')
+if [ -n "$AWS_USER_ARN" ]; then
+    AWS_USER_KEYS=$(aws iam list-access-keys --user-name="$IAM_USER"|jq '.AccessKeyMetadata[]|select(.Status=="Active")')
+    if [ -n "$AWS_USER_KEYS" ]; then
+        echo "IAM user '$IAM_USER' exists, checking that --aws-key and --aws-secret are provided"
+        exit_on_undefined "$_arg_aws_key" "--aws-key"
+        exit_on_undefined "$_arg_aws_secret" "--aws-secret"
+    fi
+fi
+
+yellow "Checking EC2 KeyPair existence"
+KEYPAIR="$(keypair)"
+KEYPAIR_NAME="$(echo "$KEYPAIR"|keypair_name)"
+if [ -n "$KEYPAIR_NAME" ]; then
+    echo "Checking RSA keys for EC2 KeyPair exist locally..."
+    if [ ! -f "$SSH_KEY" ]; then
+        red "EC2 instances have already been created, but root SSH key is missing locally"
+        red "Place the private RSA key matching the EC2 KeyPair '$EC2_KEY_PAIR' to '$SSH_KEY' before proceeding"
+        exit 1
+    else
+        yellow "Checking RSA key fingerprint matches EC2 KeyPair..."
+        KEYPAIR_FINGERPRINT="$(echo "$KEYPAIR"|jq -r '.KeyPairs[]|select(.KeyName="app")|.KeyFingerprint')"
+        if [ "$(aws_keypair_fingerprint)" == "$KEYPAIR_FINGERPRINT" ]; then
+            :
+        else
+            red "EC2 KeyPair fingerprint '$KEYPAIR_FINGERPRINT' does not match '$SSH_KEY' fingerprint '$(aws_keypair_fingerprint)'"
+            exit 1
+        fi
+    fi
+fi
+
+yellow "Checking AWS_PROFILE region matches $CLOUD/settings AWS_REGION '$AWS_REGION'"
+VPC_PROFILE=$(vpc|vpc_id)
+VPC_FUTUSWARM=$(aws ec2 describe-vpcs --filter Name=tag:$TAG_KEY,Values=$TAG --region=$AWS_REGION|vpc_id)
+if [ "$VPC_FUTUSWARM" == "$VPC_PROFILE" ]; then
+    :
+else
+    red "AWS region for AWS_PROFILE does not match settings '$AWS_REGION'"
+    exit 1
+fi
+
 yellow "Prepare AWS resources..."
 ( . ./prepare_aws.sh )
 
 # ensure SSH_KEY is available
 add_ssh_key_to_agent "$SSH_KEY"
 
+# AWS_KEY/SECRET used to allow tests to work without install.sh
 NODE_LIST="$(node_list)"
 AWS_KEY="$_arg_aws_key"
 AWS_SECRET="$_arg_aws_secret"
@@ -144,16 +194,25 @@ fi
 
 yellow "Update host basics..."
 for ip in ${NODE_LIST[@]}; do
-    ( HOST=$ip . ./prepare_host.sh ) &
+    ( HOST="$ip" . ./prepare_host.sh ) &
 done
 wait $(jobs -p)
 
 yellow "Prepare Elastic Load Balancer (ELB)..."
 ( . ./prepare_elbv2.sh )
 
+yellow "Create AWS user..."
+( . ./prepare_aws_user.sh )
+
+yellow "Configure AWS credentials..."
+for ip in ${NODE_LIST[@]}; do
+    ( HOST="$ip" . ./prepare_aws_credentials.sh ) &
+done
+wait $(jobs -p)
+
 yellow "Install Docker '$DOCKER_VERSION' on all Swarm instances..."
 for ip in ${NODE_LIST[@]}; do
-    ( HOST=$ip . ./prepare_docker.sh ) &
+    ( HOST="$ip" . ./prepare_docker.sh ) &
 done
 wait $(jobs -p)
 
@@ -161,7 +220,7 @@ yellow "Install REX-Ray '$REXRAY_VERSION' on all Swarm instances..."
 # early config preparation to avoid mutating same config files in parallel
 prepare_rexray_config
 for ip in ${NODE_LIST[@]}; do
-    ( HOST=$ip SKIP_REXCONF=y . ./prepare_rexray.sh ) &
+    ( HOST="$ip" SKIP_REXCONF=y . ./prepare_rexray.sh ) &
 done
 wait $(jobs -p)
 
@@ -219,8 +278,8 @@ yellow "Prepare ACL"
 yellow "EC2 instance availability..."
 check_reachable "$DOMAIN"
 check_reachable "$DOMAIN" 443
-check_reachable "$(elb $ELB_NAME|jq_elb_dnsname)"
-check_reachable "$(elb $ELB_NAME|jq_elb_dnsname)" 443
+check_reachable "$(v2elb $ELB_NAME|jq_v2elb_dnsname)"
+check_reachable "$(v2elb $ELB_NAME|jq_v2elb_dnsname)" 443
 
 _IPS="$(swarm_manager_instances|jq -r '.Reservations[].Instances[]|.PublicIpAddress')"
 for ip in ${_IPS[@]}; do
@@ -272,6 +331,16 @@ yellow "Cronjobs..."
 yellow "Preparing Secrets..."
 ( . ./prepare_secrets.sh )
 
+if [[ "$_arg_cloudwatch_logs" == "true" ]]; then
+    yellow "Preparing CloudWatch logging..."
+    for ip in ${NODE_LIST[@]}; do
+        ( HOST="$ip" . ./prepare_cloudwatch.sh ) &
+    done
+    wait $(jobs -p)
+else
+    yellow "Skipping CloudWatch logging setup..."
+fi
+
 yellow "Prepare futuswarm container..."
 ( . ./prepare_futuswarm_container.sh )
 
@@ -281,7 +350,8 @@ yellow "Prepare futuswarm-health container..."
 do_post_install "install.sh"
 
 FULL_LOG="$(install_log)"
-green "Installation complete! Logs available at $FULL_LOG"
+green "Installation complete!"
+echo "Logs available at $FULL_LOG"
 echo "Usage instructions at https://$DOMAIN"
 RED_ISSUES="$(cat $FULL_LOG|grep ✘)"
 if [[ -n "$RED_ISSUES" ]]; then

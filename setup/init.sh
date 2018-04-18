@@ -2,9 +2,6 @@
 RUN_ID="${RUN_ID:-$RANDOM}"
 TERM="${TERM:-xterm-256color}"
 
-# set PS1 for virtualenv
-PS1="${PS1:-\u@\w: }"
-
 MODENV="${MODENV:-y}"
 STRICT="${STRICT:-n}"
 if [ "$MODENV" == "y" ]; then

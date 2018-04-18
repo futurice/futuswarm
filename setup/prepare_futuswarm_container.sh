@@ -6,9 +6,8 @@ CLI_NAME="${_CLI_NAME:-$CLI_NAME}"
 HOST="${HOST:-$(manager_ip)}"
 
 # Prepare "Hello World" container
-set +u # virtualenv...
 mk_virtualenv
-source venv/bin/activate
+source_virtualenv
 
 rm -rf /tmp/container
 # defaults
@@ -66,6 +65,4 @@ deploy_service $IMAGE $IMAGE_TAG $IMAGE 1>/dev/null &
 spinner $! "Deploying $IMAGE:$IMAGE_TAG as $IMAGE"
 cd - 1>/dev/null
 
-# exit virtualenv
-deactivate
-set -u
+deactivate_virtualenv

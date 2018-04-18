@@ -14,7 +14,7 @@ TAG=test
 AWS_PROFILE="${AWS_PROFILE:=}"
 AWS_REGION=eu-west-1
 AWS_DNS=169.254.169.253
-IAM_USER=$TAG
+IAM_USER=futuswarm-$TAG
 
 #
 # Secrets
@@ -38,8 +38,8 @@ ACL_DB_NAME=futuswarm
 # ACM SSL certificate
 #
 
-DOMAIN=$TAG.futurice.com
-ELB_DOMAIN="*.$TAG.futurice.com"
+DOMAIN=$TAG.example.com
+ELB_DOMAIN="*.$TAG.example.com"
 OPEN_DOMAIN=
 
 #
@@ -47,7 +47,7 @@ OPEN_DOMAIN=
 # - COMPANY -- Docker image namespace (eg. company/container-name)
 #
 
-COMPANY=futurice
+COMPANY=example
 DOCKER_CONTAINER_PORT=8000
 DOCKER_VERSION="${DOCKER_VERSION:-18.02.0~ce-0~ubuntu}"
 
@@ -62,7 +62,7 @@ BLOCKDEVICE_SIZE=20
 BLOCKDEVICE_VOLUME_TYPE=gp2
 EC2_KEY_PAIR=$TAG
 EC2_SUBNET_STRATEGY=static
-EC2_SUBNET_AS=eu-central-1a
+EC2_SUBNET_AS=eu-west-1a
 
 #
 # SSH
@@ -100,7 +100,7 @@ SWARM_NODES=$(cat <<EOF
 EOF
 )
 SWARM_NODE_LABEL_KEY=swarm-label
-SWARM_S3_BUCKET="com.futurice.futuswarm.$TAG.files"
+SWARM_S3_BUCKET="com.futuswarm.$TAG.files"
 CORE_CONTAINERS="proxy swarm-listener futuswarm futuswarm-health sso-proxy"
 DOCKER_REGISTRY_PORT=5000
 

@@ -29,9 +29,6 @@ REMOTE_REGISTRY_PORT=$DOCKER_REGISTRY_PORT
 SSH_KEY="$(pwd)/server/server-key-for-tests"
 NODE_LIST="localhost"
 RESTART_SSH=false
-AWS_DEFAULT_REGION=eu-west-1
-AWS_ACCESS_KEY_ID="$AWS_KEY"
-AWS_SECRET_ACCESS_KEY="$AWS_SECRET"
 SWARM_MAP="${SWARM_MAP:-host.docker.internal:2223,worker-1}"
 DOCKER_HOST_ADDR="$(echo "$SWARM_MAP"|cut -d, -f1)"
 WORKER_NODES="$DOCKER_HOST_ADDR"
@@ -105,7 +102,7 @@ EOF
         ( SSH_PORT=$SSH_PORT_SERVER . ./prepare_host.sh )
 
         log "prepare db:postgres"
-        SSH_PORT="$SSH_PORT_SERVER" SSH_USER=root SU=1 prepare_db "localhost"
+        SSH_PORT=$SSH_PORT_SERVER SSH_USER=root SU=1 prepare_db "localhost"
 
         log "manager:docker"
         ( SSH_PORT=$SSH_PORT_SERVER . ./prepare_docker.sh >&/dev/null||true )
@@ -114,7 +111,10 @@ EOF
         ( SSH_PORT=$SSH_PORT_SERVER . ./prepare_manager.sh )
 
         log "manager:cli"
-        ( SSH_PORT="$SSH_PORT_SERVER" . ./prepare_cli.sh )
+        ( SSH_PORT=$SSH_PORT_SERVER . ./prepare_cli.sh )
+
+        log "manager:aws-credentials"
+        ( SSH_PORT=$SSH_PORT_SERVER SSH_USER=root . ./prepare_aws_credentials.sh )
 
         log "manager:secrets"
         ( . ./prepare_secrets.sh )
@@ -159,3 +159,4 @@ echo HOST=localhost REMOTE_REGISTRY_PORT=5000 SSH_USER="$_SSH_USER" SSH_KEY="ser
 admin() {
 echo bash admin.sh
 }
+

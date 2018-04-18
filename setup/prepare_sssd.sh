@@ -27,10 +27,8 @@ wait $(jobs -p)
 # ensure clean tmp-directory
 rm -rf /tmp/ansible
 
-set +u # virtualenv...
 mk_virtualenv
-source venv/bin/activate
-set -u
+source_virtualenv
 
 if [ ! -d /tmp/ansible ]; then
 git clone git@github.com:futurice/ansible.git /tmp/ansible 1>/dev/null||true
@@ -55,9 +53,8 @@ ANSIBLE_STDOUT_CALLBACK=actionable ansible-playbook site.yml -i swarm_hosts.ini 
 install_sssd 1>/dev/null &
 spinner $! "Processing Ansible instructions..."
 
-deactivate
+deactivate_virtualenv
 cd - 1>/dev/null
-set -u
 
 # TODO: "${0##*/}" in subshell points to parent
 do_post_install "prepare_sssd.sh"

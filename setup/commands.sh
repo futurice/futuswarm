@@ -510,12 +510,24 @@ if [ ! -d venv ]; then
     yellow "Creating virtualenv..."
     pip install virtualenv
     virtualenv venv 1>/dev/null
-    source venv/bin/activate
+    PS1="${PS1:-}" source venv/bin/activate
     pip install ansible==2.4.2.0 awscli==1.14.1 cryptography==2.1.4 secret==0.8 markdown==2.6.11
     # awscli installs a boto3 that is too old to be compatible
     pip install boto3==1.4.8
     deactivate
 fi
+}
+
+source_virtualenv() {
+set +u
+PS1="${PS1:-}" source venv/bin/activate
+set -u
+}
+
+deactivate_virtualenv() {
+set +u
+deactivate
+set -u
 }
 
 rc0_yes() {

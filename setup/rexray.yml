@@ -10,6 +10,4 @@ libstorage:
         mount:
           preempt: True
 ebs:
-  accessKey: AWS_KEY
-  secretKey: AWS_SECRET
   region: AWS_REGION

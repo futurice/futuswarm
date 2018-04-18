@@ -164,9 +164,6 @@ sudo bash -c "HOME=/root/ $CMD" 2>/dev/null
 push_image_to_swarm_node() {
 # 1: _arg_host
 # SSH tunnel for Docker Registry: CLIENT:5000 -> manager:5xxx is CLIENT:5000 [1..n] -> worker[n]:5xxx is manager:5xxx
-local _host=$(echo "$1"|cut -d: -f1)
-local _port=$(echo "$1"|cut -d: -f2 -s)
-
 local remote_registry_host=$(echo "$_arg_host"|cut -d: -f1)
 local remote_registry_port=$(echo "$_arg_host"|cut -d: -f2)
 
@@ -176,18 +173,15 @@ SSH_ARGS="-R $remote_registry_port:$remote_registry_host:$remote_registry_port"
 if [[ $(echo $COMMAND|jq -r '.su') == true ]]; then
 SU=true
 fi
-run_client $_host "$CMD"
+run_client "$1" "$CMD"
 }
 
 check_image_on_swarm_node() {
-local _host=$(echo "$1"|cut -d: -f1)
-local _port=$(echo "$1"|cut -d: -f2 -s)
-
 CMD='{"command":"docker:images:name","image_tag":"'$_arg_image_tag'","spread":false}'
 if [[ $(echo $COMMAND|jq -r '.su') == true ]]; then
 SU=true
 fi
-run_client $_host "$CMD"
+run_client "$1" "$CMD"
 }
 
 parse() {

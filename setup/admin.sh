@@ -18,7 +18,7 @@ _arg_legacy_docker=
 _arg_name=
 
 mk_virtualenv
-source venv/bin/activate
+source_virtualenv
 
 die() {
     local _ret=$2
@@ -344,5 +344,4 @@ print_help
 ;;
 esac
 
-# exit virtualenv
-deactivate
+deactivate_virtualenv
