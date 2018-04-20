@@ -36,6 +36,7 @@ RDS_DB_NAME=
 ACL_DB_NAME=
 CORE_CONTAINERS=
 CONTAINER_PORT=
+LOG_OPTS=
 # /GLOBALS
 
 
@@ -138,6 +139,7 @@ if [[ -n "$_arg_replicas" ]]; then
     _REPLICAS="$_arg_replicas"
 fi
 ENVIRON_VARS="$(get_secrets)"
+FMT_LOG_OPTS="${LOG_OPTS//__NAME__/$_arg_name}"
 CMD=$(echo docker service create \
   --name=$_arg_name \
   --network=proxy \
@@ -150,6 +152,7 @@ CMD=$(echo docker service create \
   -l com.df.servicePath=/ \
   -l com.df.serviceDomain="$(get_domains)" \
   -l com.df.port=$_arg_port \
+  "$FMT_LOG_OPTS" \
   $DOCKER_DETACH \
   $_LIMIT_CPU \
   --replicas=$_REPLICAS \

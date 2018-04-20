@@ -49,7 +49,7 @@ OPEN_DOMAIN=
 
 COMPANY={COMPANY}
 DOCKER_CONTAINER_PORT=8000
-DOCKER_VERSION="${DOCKER_VERSION:-18.02.0~ce-0~ubuntu}"
+DOCKER_VERSION="${DOCKER_VERSION:-18.04.0*}"
 
 #
 # AMI
@@ -105,6 +105,18 @@ SWARM_NODE_LABEL_KEY=swarm-label
 SWARM_S3_BUCKET="com.futuswarm.$TAG.files"
 CORE_CONTAINERS="proxy swarm-listener futuswarm futuswarm-mainpage futuswarm-health sso-proxy"
 DOCKER_REGISTRY_PORT=5005
+# Substitution: __NAME__  for service name
+# NOTE: blank line required before EOF when last line ends with a backslash
+LOG_OPTS=$(cat <<EOF
+--log-driver=awslogs \
+--log-opt awslogs-region=$AWS_REGION \
+--log-opt awslogs-group=/$TAG/__NAME__ \
+--log-opt tag='{{.Name}}/{{.ID}}' \
+--log-opt awslogs-create-group=true \
+
+EOF
+)
+
 
 #
 # TAGS
