@@ -7,7 +7,7 @@ IS_INSTALLED=$(run_sudo $HOST "is_installed docker")
 IS_RUNNING=$(run_sudo $HOST "is_running docker")
 DOCKER_DAEMON_VERSION=$(run_sudo $HOST "docker_daemon_version")
 UPGRADE_DOCKER="${UPGRADE_DOCKER:-no}"
-FORCE_RESTART="${FORCE_RESTART:-no}"
+RESTART_DOCKER="${RESTART_DOCKER:-no}"
 NAME="Docker"
 
 install_docker() {
@@ -74,7 +74,7 @@ else
 fi
 
 # force?
-if [[ "$FORCE_RESTART" == "yes" ]]; then
+if [[ "$RESTART_DOCKER" == "yes" ]]; then
     yellow "$HOST: Restarting $NAME..."
     restart_docker
 fi

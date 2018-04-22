@@ -30,3 +30,13 @@ python ./awslogs-agent-setup.py --region=$AWS_REGION --non-interactive --configf
 EOF
 )
 run_sudo $HOST "$REMOTE"
+
+synchronize awslogs.service /lib/systemd/system/ $HOST
+
+REMOTE=$(cat <<EOF
+systemctl daemon-reload
+systemctl enable awslogs.service||true
+systemctl start awslogs.service||true
+EOF
+)
+run_sudo $HOST "$REMOTE"

@@ -11,3 +11,5 @@ libstorage:
           preempt: True
 ebs:
   region: AWS_REGION
+  accessKey: AWS_KEY
+  secretKey: AWS_SECRET

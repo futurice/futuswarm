@@ -15,12 +15,16 @@ _SKIP_REXCONF="${SKIP_REXCONF:-}"
 IS_RUNNING=$(run_sudo $HOST "is_running rexray")
 IS_INSTALLED=$(run_sudo $HOST "is_installed rexray")
 UPGRADE_REXRAY="${UPGRADE_REXRAY:-no}"
-FORCE_RESTART="${FORCE_RESTART:-no}"
+RESTART_REXRAY="${RESTART_REXRAY:-no}"
 NAME="REX-Ray"
 
 if [ "$_SKIP_REXCONF" == "" ]; then
 prepare_rexray_config
 fi
+
+config_rexray() {
+synchronize "$(rexray_config_file)" /etc/rexray/$REXRAY_CONFIG $HOST
+}
 
 install_rexray() {
 REMOTE=$(cat <<-"EOF"
@@ -31,7 +35,7 @@ curl -sSL https://dl.bintray.com/emccode/rexray/install|sh -
 EOF
 )
 run_sudo $HOST "$REMOTE"||true
-synchronize "$(rexray_config_file)" /etc/rexray/$REXRAY_CONFIG $HOST
+config_rexray
 }
 
 restart_rexray() {
@@ -54,6 +58,7 @@ if [[ "$IS_INSTALLED" == "yes" ]]; then
     if [[ "$IS_RUNNING" == "yes" ]]; then
         :
     else
+        config_rexray
         restart_rexray
     fi
 else
@@ -64,8 +69,9 @@ else
 fi
 
 # force?
-if [[ "$FORCE_RESTART" == "yes" ]]; then
+if [[ "$RESTART_REXRAY" == "yes" ]]; then
     yellow "$HOST: Restarting $NAME..."
+    config_rexray
     restart_rexray
 fi
 

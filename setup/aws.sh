@@ -425,6 +425,8 @@ local F="$(rexray_config_file)"
 cp $REXRAY_CONFIG $F
 replaceinfile $F 'SECURITY_GROUPS' "$SECURITY_GROUPS"
 replaceinfile $F 'AWS_REGION' "$AWS_REGION"
+replaceinfile $F 'AWS_KEY' "$AWS_KEY"
+replaceinfile $F 'AWS_SECRET' "$AWS_SECRET"
 }
 
 get_sg_tag() {
