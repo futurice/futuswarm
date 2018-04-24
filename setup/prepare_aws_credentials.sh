@@ -4,12 +4,6 @@ source init.sh
 H="/root"
 # aws
 REMOTE=$(cat <<EOF
-export DEBIAN_FRONTEND=noninteractive
-apt-get -qq update
-apt-get -qq install -y python python-pip
-
-pip install -q setuptools pip awscli==1.14.1
-
 mkdir -p $H/.aws
 echo """
 [default]

@@ -96,6 +96,12 @@ _arg_async=
 _arg_replicas=
 _arg_password=
 _arg_extra=
+_arg_from=
+_arg_start=
+_arg_end=
+_arg_filter=
+_arg_total=
+_arg_verbose=
 
 DOCKER_CMD="$(docker_cmd)"
 
@@ -128,6 +134,8 @@ print_example "? list all running services, or the status of a specific one"
 print_example "app:list -n NAME"
 printf "\t%s\n" " app:inspect"
 printf "\t%s\n" " app:logs"
+print_example "? list logs for the last 24h"
+print_example "? (optional: --start '-2h', --end '2017-01-01', --total NUMBER, --filter PATTERN, --verbose, --from aws|docker)"
 printf "\t%s\n" " app:shell"
 print_example "? access a container"
 print_example "app:shell -n NAME"
@@ -367,6 +375,18 @@ while test $# -gt 0; do
             _arg_replicas=$(arg_required replicas "$1" "$2") || die
         ;; --password|--password=*)
             _arg_password=$(arg_required password "$1" "$2") || die
+        ;; --from|--from=*)
+            _arg_from=$(arg_required from "$1" "$2") || die
+        ;; --start|--start=*)
+            _arg_start=$(arg_required start "$1" "$2") || die
+        ;; --end|--end=*)
+            _arg_end=$(arg_required end "$1" "$2") || die
+        ;; --filter|--filter=*)
+            _arg_filter=$(arg_required filter "$1" "$2") || die
+        ;; --verbose|--verbose=*)
+            _arg_verbose=on
+        ;; --total|--total=*)
+            _arg_total=$(arg_required total "$1" "$2") || die
         ;; --debug)
             _arg_debug=on
         ;; --async)
@@ -453,7 +473,7 @@ run_client $HOST '{"command":"app:inspect","name":"'$_arg_name'"}'
 
 ;; app:logs)
 exit_on_undefined "$_arg_name" "--name"
-run_client $HOST '{"command":"app:logs","name":"'$_arg_name'"}'
+run_client $HOST '{"command":"app:logs","name":"'$_arg_name'","from":"'$_arg_from'","start":"'$_arg_start'","end":"'$_arg_end'","filter":"'$_arg_filter'","total":"'$_arg_total'","verbose":"'$_arg_verbose'"}'
 
 ;; app:run)
 exit_on_undefined "$_arg_name" "--name"

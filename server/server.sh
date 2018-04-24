@@ -228,6 +228,12 @@ _arg_placement=$(parse '.placement // empty')
 _arg_async=$(parse '.async // empty')
 _arg_replicas=$(parse '.replicas // empty')
 _arg_password=$(parse '.password // empty')
+_arg_from=$(parse '.from // empty')
+_arg_start=$(parse '.start // empty')
+_arg_end=$(parse '.end // empty')
+_arg_filter=$(parse '.filter // empty')
+_arg_total=$(parse '.total // empty')
+_arg_verbose=$(parse '.verbose // empty')
 
 # default values when unspecified
 if [[ "$_arg_size" == "" ]]; then
@@ -593,7 +599,33 @@ case "$_arg_cmd" in
         ;;
     "app:logs")
         cando
-        sudo timeout 5 docker service logs -t --since 24h --tail 500 $_arg_name
+        _FROM="${_arg_from:-aws}"
+        _TOTAL="${_arg_total:-500}"
+        _CUT='cut -d" " -f 4-100'
+        if [[ -n "$_arg_verbose" ]]; then
+            _CUT='cut -d" " -f 1-100'
+        fi
+        if [ "$_FROM" == "docker" ]; then
+            sudo timeout 5 docker service logs -t --since 24h --tail $_TOTAL $_arg_name
+        elif [ $_FROM == "aws" ]; then
+            if [[ "$_arg_env" == "" ]]; then
+                _arg_start="-24h"
+            fi
+            _START="$(python /opt/commands.py stdin_to_dateparse <<< "$_arg_start")"
+            _END="$(if [[ -n "$_arg_end" ]];then echo --end-date $(python /opt/commands.py stdin_to_dateparse <<< "$_arg_end");fi)"
+            _FILTER=$(if [[ -n "$_arg_filter" ]];then echo --filter-pattern=$_arg_filter;fi)
+            sudo bash -c "HOME=/root/ aws logs filter \
+                    --start-time $_START \
+                    --end-time $_END \
+                    --log-group-name '/$TAG/$_arg_name' \
+                    --start-date $_START \
+                    $_END \
+                    $_FILTER \
+                    --interleaved \
+                    --max-items $_TOTAL|$_CUT"
+        else
+            red "--from did not match a supported logging driver (docker, aws)"
+        fi
         ;;
     "app:inspect")
         cando
@@ -646,12 +678,12 @@ case "$_arg_cmd" in
         cando
         determine_node
         CMD='{"command":"app:run:exec","name":"'$CONTAINER_NAME'","action":"'$_arg_action'"}'
-        yellow "Found '$CONTAINER_NAME' in $NODE_NAME"
+        yellow "Found '$CONTAINER_NAME' in $NODE_NAME ($CONTAINER_NODE_IP:$CONTAINER_NODE_SSH_PORT)"
         SSH_ARGS="-p $CONTAINER_NODE_SSH_PORT" run_client $CONTAINER_NODE_IP "$CMD"
         ;;
     "app:run:exec")
-        _CONTAINER_ID="$(sudo docker ps --format '{{json .}}'|jq -r 'select(.Names|startswith("'$_arg_name'"))|.ID'|head -n1)"
         yellow "Running '$_arg_action' in '$_arg_name' container"
+        _CONTAINER_ID="$(sudo docker ps --format '{{json .}}'|jq -r 'select(.Names|startswith("'$_arg_name'"))|.ID'|head -n1)"
         sudo docker exec \
             "$_CONTAINER_ID" \
             sh -c "$_arg_action"

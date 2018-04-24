@@ -5,11 +5,7 @@ H="/root"
 
 # awscli, secret
 REMOTE=$(cat <<EOF
-export DEBIAN_FRONTEND=noninteractive
-apt-get -qq update
-apt-get -qq install -y python python-pip
-
-pip install -q setuptools pip secret==0.8
+pip install -q secret==0.8
 pip install -q boto3==1.4.8
 
 mkdir -p $H/.secret

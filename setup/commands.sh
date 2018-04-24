@@ -538,6 +538,11 @@ else
 fi
 }
 
+is_pip_installed() {
+SYSTEMD_PAGER='' pip freeze|grep "$1" 1>/dev/null
+rc0_yes "$?"
+}
+
 is_installed() {
 SYSTEMD_PAGER='' service "$1" status|grep "Loaded:"|grep ": loaded" 1>/dev/null
 rc0_yes "$?"

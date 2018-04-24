@@ -29,7 +29,7 @@ REMOTE_REGISTRY_PORT=$DOCKER_REGISTRY_PORT
 SSH_KEY="$(pwd)/server/server-key-for-tests"
 NODE_LIST="localhost"
 RESTART_SSH=false
-SWARM_MAP="${SWARM_MAP:-host.docker.internal:2223,worker-1}"
+SWARM_MAP="${SWARM_MAP:-host.docker.internal:2223,worker-1 host.docker.internal:2222,linuxkit-025000000001}"
 DOCKER_HOST_ADDR="$(echo "$SWARM_MAP"|cut -d, -f1)"
 WORKER_NODES="$DOCKER_HOST_ADDR"
 SSH_FLAGS="${SSH_FLAGS:--o UserKnownHostsFile=/dev/null}"
@@ -85,7 +85,7 @@ function ensure_container_running {
 
     log "node:restricted_shell"
     cd setup/
-    ( SSH_PORT=$SSH_PORT_WORKER . ./prepare_restricted_shell.sh)
+    ( SSH_PORT=$SSH_PORT_WORKER . ./prepare_restricted_shell.sh )
 
     log "node:aws-credentials"
     ( SSH_PORT=$SSH_PORT_WORKER . ./prepare_aws_credentials.sh )
