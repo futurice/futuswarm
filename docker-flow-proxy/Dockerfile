@@ -1,2 +1,2 @@
-FROM vfarcic/docker-flow-proxy:18.02.08-104
+FROM dockerflow/docker-flow-proxy:18.05.08-46
 COPY errorfiles/503.http /errorfiles/503.http

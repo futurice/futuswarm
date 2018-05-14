@@ -30,12 +30,14 @@ cd - 1>/dev/null
 push_image $FS_HEALTH $TAG
 
 yellow " creating $FS_HEALTH"
+FMT_LOG_OPTS="${LOG_OPTS//__NAME__/$FS_HEALTH}"
 REMOTE=$(cat <<EOF
 docker service create --name $FS_HEALTH \
     --network proxy \
     --endpoint-mode dnsrr \
     --constraint 'node.role==manager' \
     --detach=false \
+    $FMT_LOG_OPTS \
     $FS_HEALTH:$TAG
 EOF
 )

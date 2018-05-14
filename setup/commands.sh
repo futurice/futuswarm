@@ -507,13 +507,13 @@ fi
 
 mk_virtualenv() {
 if [ ! -d venv ]; then
-    yellow "Creating virtualenv..."
+    yellow "Creating virtualenv into ./venv, using --python=$PYTHON_BIN"
     pip install virtualenv
-    virtualenv venv 1>/dev/null
+    virtualenv -p "$PYTHON_BIN" venv 1>/dev/null
     PS1="${PS1:-}" source venv/bin/activate
-    pip install ansible==2.4.2.0 awscli==1.14.1 cryptography==2.1.4 secret==0.8 markdown==2.6.11
+    pip install ansible==2.4.2.0 awscli==1.15.19 cryptography==2.1.4 secret==0.8 markdown==2.6.11
     # awscli installs a boto3 that is too old to be compatible
-    pip install boto3==1.4.8
+    #pip install boto3==1.7.19
     deactivate
 fi
 }

@@ -37,6 +37,7 @@ ACL_DB_NAME=
 CORE_CONTAINERS=
 CONTAINER_PORT=
 LOG_OPTS=
+TAG=
 # /GLOBALS
 
 
@@ -608,21 +609,19 @@ case "$_arg_cmd" in
         if [ "$_FROM" == "docker" ]; then
             sudo timeout 5 docker service logs -t --since 24h --tail $_TOTAL $_arg_name
         elif [ $_FROM == "aws" ]; then
-            if [[ "$_arg_env" == "" ]]; then
+            if [[ "$_arg_start" == "" ]]; then
                 _arg_start="-24h"
             fi
             _START="$(python /opt/commands.py stdin_to_dateparse <<< "$_arg_start")"
-            _END="$(if [[ -n "$_arg_end" ]];then echo --end-date $(python /opt/commands.py stdin_to_dateparse <<< "$_arg_end");fi)"
+            _END="$(if [[ -n "$_arg_end" ]];then echo --end-time $(python /opt/commands.py stdin_to_dateparse <<< "$_arg_end");fi)"
             _FILTER=$(if [[ -n "$_arg_filter" ]];then echo --filter-pattern=$_arg_filter;fi)
+            # TODO: only --nopaginate offered to get 1 page of results
             sudo bash -c "HOME=/root/ aws logs filter \
                     --start-time $_START \
-                    --end-time $_END \
                     --log-group-name '/$TAG/$_arg_name' \
-                    --start-date $_START \
                     $_END \
                     $_FILTER \
-                    --interleaved \
-                    --max-items $_TOTAL|$_CUT"
+                    --interleaved|$_CUT"
         else
             red "--from did not match a supported logging driver (docker, aws)"
         fi

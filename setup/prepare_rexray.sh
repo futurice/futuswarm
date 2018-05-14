@@ -31,7 +31,7 @@ REMOTE=$(cat <<-"EOF"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 apt-get install -qq -o=Dpkg::Use-Pty=0 -y nfs-common
-curl -sSL https://dl.bintray.com/emccode/rexray/install|sh -
+curl -sSL https://rexray.io/install | sh -
 EOF
 )
 run_sudo $HOST "$REMOTE"||true

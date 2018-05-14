@@ -6,7 +6,7 @@ H="/root"
 # awscli, secret
 REMOTE=$(cat <<EOF
 pip install -q secret==0.8
-pip install -q boto3==1.4.8
+pip install -q boto3==1.7.19
 
 mkdir -p $H/.secret
 echo """
