@@ -444,8 +444,14 @@ arg_required() {
     fi
 }
 
+# eg. major.minor.patch-ce => 1805
 docker_version_num() {
-echo "${1:-$DOCKER_VERSION}"|cut -d. -f1,2|sed 's~\.~~g'
+echo "${1:-$DOCKER_VERSION}"|fmt_version|cut -c1-4
+}
+
+# strip [.-*a-zA-Z]
+fmt_version() {
+    echo "${1:-$(stdin)}"|sed 's~[-a-zA-Z*.]~~g'
 }
 
 # 1: (rcode=1)
@@ -511,9 +517,7 @@ if [ ! -d venv ]; then
     pip install virtualenv
     virtualenv -p "$PYTHON_BIN" venv 1>/dev/null
     PS1="${PS1:-}" source venv/bin/activate
-    pip install ansible==2.4.2.0 awscli==1.15.19 cryptography==2.1.4 secret==0.8 markdown==2.6.11
-    # awscli installs a boto3 that is too old to be compatible
-    #pip install boto3==1.7.19
+    pip install ansible==2.4.2.0 awscli==1.15.19 cryptography==2.1.4 secret==0.8 markdown==2.6.11 dateparser==0.7.0
     deactivate
 fi
 }
