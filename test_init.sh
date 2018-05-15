@@ -60,7 +60,7 @@ function ensure_container_running {
     log "swarm:rm worker-1"
     docker rm -f -v worker-1 >&/dev/null||true
     log "swarm:run worker-1"
-    docker run -d --privileged --restart always --name worker-1 --hostname=worker-1 -p 127.0.0.1:12375:2375 -p 127.0.0.1:$SSH_PORT_WORKER:22 docker:18.04.0-ce-dind >&/dev/null||true
+    docker run -d --privileged --restart always --name worker-1 --hostname=worker-1 -p 127.0.0.1:12375:2375 -p 127.0.0.1:$SSH_PORT_WORKER:22 docker:18.05.0-ce-dind >&/dev/null||true
     log "swarm:join worker-1 to manager"
     docker --host=localhost:12375 swarm join --token ${SWARM_TOKEN} ${SWARM_MASTER}:2377 >&/dev/null||true
 

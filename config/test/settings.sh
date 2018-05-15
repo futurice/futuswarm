@@ -49,7 +49,7 @@ OPEN_DOMAIN=
 
 COMPANY=example
 DOCKER_CONTAINER_PORT=8000
-DOCKER_VERSION="${DOCKER_VERSION:-18.04.0*}"
+DOCKER_VERSION="${DOCKER_VERSION:-18.05.0*}"
 
 #
 # AMI
@@ -112,6 +112,7 @@ LOG_OPTS=$(cat <<EOF
 
 EOF
 )
+LOG_OPTS="" # awslogs has issues finding credentials --log-driver=syslog
 
 #
 # TAGS

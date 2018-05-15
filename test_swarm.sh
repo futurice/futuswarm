@@ -19,7 +19,7 @@ _SECRETS_MOCK_NOHEADER="$(echo "$_SECRETS_MOCK")"
 
 _SERVICES_MOCK=$(cat <<EOF
 {"ID":"foiir9nzulhl","Image":"nginx:latest","Mode":"replicated","Name":"nginx-test","Ports":"","Replicas":"1/1"}
-{"ID":"whj7vdtcilw7","Image":"vfarcic/docker-flow-proxy:latest","Mode":"replicated","Name":"proxy","Ports":"*:81-\u003e80/tcp,*:444-\u003e443/tcp","Replicas":"1/1"}
+{"ID":"whj7vdtcilw7","Image":"dockerflow/docker-flow-proxy:latest","Mode":"replicated","Name":"proxy","Ports":"*:81-\u003e80/tcp,*:444-\u003e443/tcp","Replicas":"1/1"}
 {"ID":"foiir9nzulhl","Image":"mixman/http-hello:latest","Mode":"replicated","Name":"another-hello-test","Ports":"","Replicas":"1/1"}
 EOF
 )
@@ -74,7 +74,7 @@ SERVICE_THREE="acl-multi-three"
 }
 
 @test "Test app:list contains docker-flow-swarm-listener" {
-    run bash -c "$(client) app:list|grep vfarcic/docker-flow-swarm-listener"
+    run bash -c "$(client) app:list|grep futuswarm/docker-flow-swarm-listener"
     [ "$status" -eq 0 ]
 }
 
