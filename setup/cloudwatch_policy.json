@@ -2,13 +2,13 @@
   "Version": "2012-10-17",
   "Statement": [
     {
+      "Effect": "Allow",
       "Action": [
-        "logs:CreateLogGroup,
+        "logs:CreateLogGroup",
         "logs:CreateLogStream",
         "logs:PutLogEvents",
         "logs:DescribeLogStreams"
       ],
-      "Effect": "Allow",
       "Resource": [
         "arn:aws:logs:*:*:*"
       ]

@@ -156,7 +156,7 @@ exit_code_not_ok() {
 
 exit_on_undefined() {
     if [[ -z "$1" ]]; then
-        echo "Required argument '$2' not defined."
+        red "Required argument '$2' not defined."
         safe_exit 1
     fi
 }
@@ -727,3 +727,6 @@ done <<< "$WORKERS"
 # TODO: rebalance
 }
 
+credentials_file() {
+echo ".credentials.${IAM_USER}"
+}

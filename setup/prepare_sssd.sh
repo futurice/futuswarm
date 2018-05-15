@@ -50,8 +50,9 @@ install_sssd() {
 ANSIBLE_STDOUT_CALLBACK=actionable ansible-playbook site.yml -i swarm_hosts.ini --tags "sssd" -u $SSH_USER --private-key "$SSH_KEY"
 }
 
-install_sssd 1>/dev/null &
-spinner $! "Processing Ansible instructions..."
+install_sssd
+# install_sssd 1>/dev/null &
+# spinner $! "Processing Ansible instructions..."
 
 deactivate_virtualenv
 cd - 1>/dev/null

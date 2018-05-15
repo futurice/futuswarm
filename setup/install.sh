@@ -184,6 +184,13 @@ VAULT_PASS="$_arg_vault_pass"
 REGISTRY_USER="$_arg_registry_user"
 REGISTRY_PASS="$_arg_registry_pass"
 
+yellow "Create AWS user..."
+( . ./prepare_aws_user.sh )
+if [[ -f "$(credentials_file)" ]]; then
+    AWS_KEY="$(cat $(credentials_file)|jq -r '.AccessKey.AccessKeyId')"
+    AWS_SECRET="$(cat $(credentials_file)|jq -r '.AccessKey.SecretAccessKey')"
+fi
+
 yellow "Create EC2 instances for Swarm..."
 create_swarm_instances manager &
 create_swarm_instances worker &
@@ -208,10 +215,7 @@ wait $(jobs -p)
 yellow "Prepare Elastic Load Balancer (ELB)..."
 ( . ./prepare_elbv2.sh )
 
-yellow "Create AWS user..."
-( . ./prepare_aws_user.sh )
-
-yellow "Configure AWS credentials..."
+yellow "Configure AWS credentials for each node..."
 for ip in ${NODE_LIST[@]}; do
     ( HOST="$ip" . ./prepare_aws_credentials.sh ) &
 done
