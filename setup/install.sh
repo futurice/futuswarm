@@ -128,6 +128,13 @@ if [ -n "$AWS_USER_ARN" ]; then
         echo "IAM user '$IAM_USER' exists, checking that --aws-key and --aws-secret are provided"
         exit_on_undefined "$_arg_aws_key" "--aws-key"
         exit_on_undefined "$_arg_aws_secret" "--aws-secret"
+        AWS_USER_KEY=$(echo $AWS_USER_KEYS|jq -r '.AccessKeyId')
+        if [ "$AWS_USER_KEY" == "$_arg_aws_key" ]; then
+            :
+        else
+            red "Provided --aws-key ($_arg_aws_key) does not match IAM User: $IAM_USER's key ($AWS_USER_KEY). Get key+secret from installation administrator?"
+            exit 1
+        fi
     fi
 fi
 
@@ -300,7 +307,7 @@ for k in $(echo $HEALTH|jq -r '.TargetHealthDescriptions[]|[.Target.Id,.TargetHe
     INSTANCE_ID="$(echo $k|cut -f1 -d,)"
     INSTANCE_ST="$(echo $k|cut -f2 -d,)"
     R=$(test "$INSTANCE_ST" = "healthy")
-    rg_status "$(exit_code_ok $? 0)" "ELB '$ELB_NAME' listener '$INSTANCE_ID' is healthy"
+    rg_status "$(exit_code_ok $? 0)" "ELB '$ELB_NAME' listener '$INSTANCE_ID' is healthy (state: $INSTANCE_ST)"
 done
 
 yellow "Checking Swarm health..."
