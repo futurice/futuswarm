@@ -11,7 +11,7 @@
         "logs:FilterLogEvents"
       ],
       "Resource": [
-        "arn:aws:logs:*:*:*"
+        "arn:aws:logs:*"
       ]
     }
   ]
