@@ -36,6 +36,8 @@ RDS_DB_NAME=
 ACL_DB_NAME=
 CORE_CONTAINERS=
 CONTAINER_PORT=
+LOG_OPTS=
+TAG=
 # /GLOBALS
 
 
@@ -138,6 +140,7 @@ if [[ -n "$_arg_replicas" ]]; then
     _REPLICAS="$_arg_replicas"
 fi
 ENVIRON_VARS="$(get_secrets)"
+FMT_LOG_OPTS="${LOG_OPTS//__NAME__/$_arg_name}"
 CMD=$(echo docker service create \
   --name=$_arg_name \
   --network=proxy \
@@ -150,6 +153,7 @@ CMD=$(echo docker service create \
   -l com.df.servicePath=/ \
   -l com.df.serviceDomain="$(get_domains)" \
   -l com.df.port=$_arg_port \
+  "$FMT_LOG_OPTS" \
   $DOCKER_DETACH \
   $_LIMIT_CPU \
   --replicas=$_REPLICAS \
@@ -164,9 +168,6 @@ sudo bash -c "HOME=/root/ $CMD" 2>/dev/null
 push_image_to_swarm_node() {
 # 1: _arg_host
 # SSH tunnel for Docker Registry: CLIENT:5000 -> manager:5xxx is CLIENT:5000 [1..n] -> worker[n]:5xxx is manager:5xxx
-local _host=$(echo "$1"|cut -d: -f1)
-local _port=$(echo "$1"|cut -d: -f2 -s)
-
 local remote_registry_host=$(echo "$_arg_host"|cut -d: -f1)
 local remote_registry_port=$(echo "$_arg_host"|cut -d: -f2)
 
@@ -176,18 +177,15 @@ SSH_ARGS="-R $remote_registry_port:$remote_registry_host:$remote_registry_port"
 if [[ $(echo $COMMAND|jq -r '.su') == true ]]; then
 SU=true
 fi
-run_client $_host "$CMD"
+run_client "$1" "$CMD"
 }
 
 check_image_on_swarm_node() {
-local _host=$(echo "$1"|cut -d: -f1)
-local _port=$(echo "$1"|cut -d: -f2 -s)
-
 CMD='{"command":"docker:images:name","image_tag":"'$_arg_image_tag'","spread":false}'
 if [[ $(echo $COMMAND|jq -r '.su') == true ]]; then
 SU=true
 fi
-run_client $_host "$CMD"
+run_client "$1" "$CMD"
 }
 
 parse() {
@@ -231,6 +229,12 @@ _arg_placement=$(parse '.placement // empty')
 _arg_async=$(parse '.async // empty')
 _arg_replicas=$(parse '.replicas // empty')
 _arg_password=$(parse '.password // empty')
+_arg_from=$(parse '.from // empty')
+_arg_start=$(parse '.start // empty')
+_arg_end=$(parse '.end // empty')
+_arg_filter=$(parse '.filter // empty')
+_arg_total=$(parse '.total // empty')
+_arg_verbose=$(parse '.verbose // empty')
 
 # default values when unspecified
 if [[ "$_arg_size" == "" ]]; then
@@ -596,7 +600,31 @@ case "$_arg_cmd" in
         ;;
     "app:logs")
         cando
-        sudo timeout 5 docker service logs -t --since 24h --tail 500 $_arg_name
+        _FROM="${_arg_from:-aws}"
+        _TOTAL="${_arg_total:-500}"
+        _CUT='cut -d" " -f 4-100'
+        if [[ -n "$_arg_verbose" ]]; then
+            _CUT='cut -d" " -f 1-100'
+        fi
+        if [ "$_FROM" == "docker" ]; then
+            sudo timeout 5 docker service logs -t --since 24h --tail $_TOTAL $_arg_name
+        elif [ $_FROM == "aws" ]; then
+            if [[ "$_arg_start" == "" ]]; then
+                _arg_start="-24h"
+            fi
+            _START="$(python /opt/commands.py stdin_to_dateparse <<< "$_arg_start")"
+            _END="$(if [[ -n "$_arg_end" ]];then echo --end-time $(python /opt/commands.py stdin_to_dateparse <<< "$_arg_end");fi)"
+            _FILTER=$(if [[ -n "$_arg_filter" ]];then echo --filter-pattern=$_arg_filter;fi)
+            # TODO: only --nopaginate offered to get 1 page of results
+            sudo bash -c "HOME=/root/ aws logs filter \
+                    --start-time $_START \
+                    --log-group-name '/$TAG/$_arg_name' \
+                    $_END \
+                    $_FILTER \
+                    --interleaved|$_CUT"
+        else
+            red "--from did not match a supported logging driver (docker, aws)"
+        fi
         ;;
     "app:inspect")
         cando
@@ -649,12 +677,12 @@ case "$_arg_cmd" in
         cando
         determine_node
         CMD='{"command":"app:run:exec","name":"'$CONTAINER_NAME'","action":"'$_arg_action'"}'
-        yellow "Found '$CONTAINER_NAME' in $NODE_NAME"
+        yellow "Found '$CONTAINER_NAME' in $NODE_NAME ($CONTAINER_NODE_IP:$CONTAINER_NODE_SSH_PORT)"
         SSH_ARGS="-p $CONTAINER_NODE_SSH_PORT" run_client $CONTAINER_NODE_IP "$CMD"
         ;;
     "app:run:exec")
-        _CONTAINER_ID="$(sudo docker ps --format '{{json .}}'|jq -r 'select(.Names|startswith("'$_arg_name'"))|.ID'|head -n1)"
         yellow "Running '$_arg_action' in '$_arg_name' container"
+        _CONTAINER_ID="$(sudo docker ps --format '{{json .}}'|jq -r 'select(.Names|startswith("'$_arg_name'"))|.ID'|head -n1)"
         sudo docker exec \
             "$_CONTAINER_ID" \
             sh -c "$_arg_action"

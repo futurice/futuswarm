@@ -156,7 +156,7 @@ exit_code_not_ok() {
 
 exit_on_undefined() {
     if [[ -z "$1" ]]; then
-        echo "Required argument '$2' not defined."
+        red "Required argument '$2' not defined."
         safe_exit 1
     fi
 }
@@ -444,8 +444,14 @@ arg_required() {
     fi
 }
 
+# eg. major.minor.patch-ce => 1805
 docker_version_num() {
-echo "${1:-$DOCKER_VERSION}"|cut -d. -f1,2|sed 's~\.~~g'
+echo "${1:-$DOCKER_VERSION}"|fmt_version|cut -c1-4
+}
+
+# strip [.-*a-zA-Z]
+fmt_version() {
+    echo "${1:-$(stdin)}"|sed 's~[-a-zA-Z*.]~~g'
 }
 
 # 1: (rcode=1)
@@ -507,15 +513,25 @@ fi
 
 mk_virtualenv() {
 if [ ! -d venv ]; then
-    yellow "Creating virtualenv..."
+    yellow "Creating virtualenv into ./venv, using --python=$PYTHON_BIN"
     pip install virtualenv
-    virtualenv venv 1>/dev/null
-    source venv/bin/activate
-    pip install ansible==2.4.2.0 awscli==1.14.1 cryptography==2.1.4 secret==0.8 markdown==2.6.11
-    # awscli installs a boto3 that is too old to be compatible
-    pip install boto3==1.4.8
+    virtualenv -p "$PYTHON_BIN" venv 1>/dev/null
+    PS1="${PS1:-}" source venv/bin/activate
+    pip install ansible==2.4.2.0 awscli==1.15.19 cryptography==2.1.4 secret==0.8 markdown==2.6.11 dateparser==0.7.0
     deactivate
 fi
+}
+
+source_virtualenv() {
+set +u
+PS1="${PS1:-}" source venv/bin/activate
+set -u
+}
+
+deactivate_virtualenv() {
+set +u
+deactivate
+set -u
 }
 
 rc0_yes() {
@@ -524,6 +540,11 @@ if [[ $1 == 0 ]]; then
 else
     echo ""
 fi
+}
+
+is_pip_installed() {
+SYSTEMD_PAGER='' pip freeze|grep "$1" 1>/dev/null
+rc0_yes "$?"
 }
 
 is_installed() {
@@ -706,3 +727,6 @@ done <<< "$WORKERS"
 # TODO: rebalance
 }
 
+credentials_file() {
+echo ".credentials.${IAM_USER}"
+}

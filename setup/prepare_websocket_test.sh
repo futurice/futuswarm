@@ -19,7 +19,6 @@ yellow "Pushing $_NAME image to Swarm..."
 ( SU=true \
     . ./cli.sh image:push -i "$_IMAGE" -t "$_TAG" )
 
-deploy_service $_IMAGE $_TAG $_NAME 1>/dev/null &
-spinner $! "Deploying $_IMAGE:$_TAG as $_NAME"
+deploy_service $_IMAGE $_TAG $_NAME
 
 cd - 1>/dev/null

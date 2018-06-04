@@ -34,7 +34,7 @@ This is an open source labor that helped Futurice IT become "Cloud Ready" [Makin
     * Allows experimental features
 * Access Control List (ACL)
     * Usage rules for CLI (owners, admins)
-* [REX-Ray](https://rexray.thecodeteam.com/) installation
+* [REX-Ray](https://rexray.io/) installation
     * Allows persistent storage using Elastic Block Store (EBS)
 * System Security Services Daemon (SSSD) -- TBA
     * Allow access based on existing LDAP users/groups
@@ -50,7 +50,7 @@ This is an open source labor that helped Futurice IT become "Cloud Ready" [Makin
 * SSO Proxy
     * Apache handles all ELB traffic to check it satisfies access criteria (eg. authenticated user)
     * Forwards traffic to Docker Flow Proxy (DFP)
-* [Docker Flow Proxy](https://github.com/vfarcic/docker-flow-proxy) (DFP)
+* [Docker Flow Proxy](https://github.com/docker-flow/docker-flow-proxy) (DFP)
     * Docker Swarm service discovery using Docker API
     * Service configuration (domains, ports) with HAProxy
     * Handles forwarded traffic from SSO Proxy
@@ -70,7 +70,6 @@ This is an open source labor that helped Futurice IT become "Cloud Ready" [Makin
 
 *What is NOT (yet) included*
 * Monitoring for High Availability (HA)
-* Centralized Logging
 
 Interested? Want to contribute? See [futuswarm github](https://github.com/futurice/futuswarm) for the installer and further details.
 
@@ -94,5 +93,5 @@ Deployed services are accessible and configurable using the CLI by their deploym
 
 Links:
  * [Apache mod_auth_pubtkt](https://neon1.net/mod_auth_pubtkt/)
- * [Docker Flow Proxy](https://github.com/vfarcic/docker-flow-proxy)
+ * [Docker Flow Proxy](https://github.com/docker-flow/docker-flow-proxy)
  * [SSSD Ansible recipe](https://github.com/futurice/ansible)

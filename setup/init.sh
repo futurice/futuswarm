@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 RUN_ID="${RUN_ID:-$RANDOM}"
 TERM="${TERM:-xterm-256color}"
-
-# set PS1 for virtualenv
-PS1="${PS1:-\u@\w: }"
+PYTHON_BIN="${PYTHON_BIN:-python}"
 
 MODENV="${MODENV:-y}"
 STRICT="${STRICT:-n}"

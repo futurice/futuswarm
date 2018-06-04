@@ -15,17 +15,15 @@ This example uses specifics for Docker MacOS. Adjust to meet Linux/Windows equiv
 * MacOS Docker Host hostname is "host.docker.internal" and "localhost" for Linux.
 
 ```sh
+export AWS_PROFILE=me
 CLOUD=test \
-    AWS_DEFAULT_REGION= \
     AWS_KEY= \
-    AWS_SECRET='' \
-    REGISTRY_USER='' \
-    REGISTRY_PASS='' \
-    RDS_USER='' \
-    RDS_PASS='' \
+    AWS_SECRET= \
+    REGISTRY_USER= \
+    REGISTRY_PASS= \
+    RDS_USER= \
+    RDS_PASS= \
     RDS_HOST="host.docker.internal" \
-    SWARM_MAP="host.docker.internal:2223,worker-1" \
-    SSH_FLAGS="-o UserKnownHostsFile=/dev/null" \
     bats test_swarm.sh
 ```
 

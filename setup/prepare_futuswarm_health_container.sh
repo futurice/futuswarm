@@ -6,9 +6,8 @@ HOST="${HOST:-$(manager_ip)}"
 FORCE="${FORCE:-false}"
 
 # Prepare "Hello World" container
-set +u # virtualenv...
 mk_virtualenv
-source venv/bin/activate
+source_virtualenv
 
 # health
 FS_HEALTH="futuswarm-health"
@@ -26,16 +25,19 @@ git add -A 1>/dev/null
 git commit -am "-.-" 1>/dev/null
 TAG=$(git rev-parse --short HEAD)
 docker build -t $FS_HEALTH:$TAG . 1> /dev/null
+cd - 1>/dev/null
 
 push_image $FS_HEALTH $TAG
 
 yellow " creating $FS_HEALTH"
+FMT_LOG_OPTS="${LOG_OPTS//__NAME__/$FS_HEALTH}"
 REMOTE=$(cat <<EOF
 docker service create --name $FS_HEALTH \
     --network proxy \
     --endpoint-mode dnsrr \
     --constraint 'node.role==manager' \
     --detach=false \
+    $FMT_LOG_OPTS \
     $FS_HEALTH:$TAG
 EOF
 )
@@ -44,6 +46,4 @@ fi
 
 cd "$SCRIPT_DIR"
 
-# exit virtualenv
-deactivate
-set -u
+deactivate_virtualenv

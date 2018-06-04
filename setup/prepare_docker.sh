@@ -7,7 +7,7 @@ IS_INSTALLED=$(run_sudo $HOST "is_installed docker")
 IS_RUNNING=$(run_sudo $HOST "is_running docker")
 DOCKER_DAEMON_VERSION=$(run_sudo $HOST "docker_daemon_version")
 UPGRADE_DOCKER="${UPGRADE_DOCKER:-no}"
-FORCE_RESTART="${FORCE_RESTART:-no}"
+RESTART_DOCKER="${RESTART_DOCKER:-no}"
 NAME="Docker"
 
 install_docker() {
@@ -44,12 +44,15 @@ EOF
 run_sudo $HOST "$REMOTE"
 }
 
+# NOTE: adding docker.service as go-awk-sdk not finding HOME/.aws/credentials without additional Environment
+
 restart_docker() {
 # enable experimental features
-SERVICE_CMD="ExecStart=/usr/bin/dockerd -H fd:// --experimental"
+#SERVICE_CMD="ExecStart=/usr/bin/dockerd -H fd:// --experimental"
+#replaceinfile '/lib/systemd/system/docker.service' '^ExecStart=.*' "$SERVICE_CMD"
+synchronize docker.service /lib/systemd/system/docker.service $HOST
 REMOTE=$(cat <<EOF
 /etc/init.d/docker stop 1>/dev/null
-replaceinfile '/lib/systemd/system/docker.service' '^ExecStart=.*' "$SERVICE_CMD"
 systemctl daemon-reload||echo 'systemd not running or misconfigured'
 /etc/init.d/docker restart 1>/dev/null
 EOF
@@ -74,7 +77,7 @@ else
 fi
 
 # force?
-if [[ "$FORCE_RESTART" == "yes" ]]; then
+if [[ "$RESTART_DOCKER" == "yes" ]]; then
     yellow "$HOST: Restarting $NAME..."
     restart_docker
 fi

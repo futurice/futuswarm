@@ -5,6 +5,7 @@ source $CWD/init.sh
 
 ARGS=$*
 ACTION="${1:-}"
+SKIP_CORE="${SKIP_CORE:-true}"
 
 _arg_from=
 _arg_to=
@@ -18,7 +19,7 @@ _arg_legacy_docker=
 _arg_name=
 
 mk_virtualenv
-source venv/bin/activate
+source_virtualenv
 
 die() {
     local _ret=$2
@@ -44,11 +45,10 @@ print_help() {
 printf 'Usage: %s COMMAND [ARGUMENTS]\n' "$0"
 printf "\t%s\n" " "
 printf "\t%s\n" "Commands:"
-printf "\t%s\n" " running-services"
+printf "\t%s\n" " running-services --from CLI"
 printf "\t%s\n" " stored-services"
-printf "\t%s\n" " migrate-secrets --to B_CLI"
-print_example "? Move secrets from swarm A to swarm B using B's CLIs"
-print_example "? ... --from futuswarm --to futuswarmv2"
+printf "\t%s\n" " migrate-secrets --to CLI"
+print_example "? Move secrets from swarm A (using AWS credentials) to swarm B (using --to CLI)"
 printf "\t%s\n" " restore-services --to CLI [--force]"
 print_example "? Restore all known services. Optionally remove existing service before deployment."
 printf "\t%s\n" " check-for-value --value (--new-value)"
@@ -143,9 +143,11 @@ while IFS= read -r line; do
         continue
     fi
 
-    if [[ $(is_in_list "$_name" "$CORE_CONTAINERS") == "y" ]]; then
-        green " skipping core container: $_name"
-        continue
+    if [[ "$SKIP_CORE" == "true" ]]; then
+        if [[ $(is_in_list "$_name" "$CORE_CONTAINERS") == "y" ]]; then
+            green " skipping core container: $_name"
+            continue
+        fi
     fi
 
     _INSPECT="${MOCK_INSPECT:-$(service_inspect "$FROM_AWS_PROFILE" "$_name")}"
@@ -163,12 +165,21 @@ while IFS= read -r line; do
     if [ -n "$_arg_noop" ]; then
         continue
     fi
-    if [ -n "$_arg_force" ]; then
-        echo ""|bash -c "$_arg_to app:remove --name $_name"
-    fi
-    echo ""|bash -c "$_arg_to app:deploy --name $_name --image $_image --tag $_tag --port=$_arg_port --open=$_arg_open"
+    restart_service "$_name" "$_image" "$_tag" "$_arg_port" "$_arg_open"
     cd - 1>/dev/null
 done <<< "$SERVICES"
+}
+
+restart_service() {
+    local name="$1"
+    local image="$2"
+    local tag="$3"
+    local port="${4:-8000}"
+    local open="${5:-false}"
+    if [ -n "$_arg_force" ]; then
+        echo ""|bash -c "$_arg_to app:remove --name $name"
+    fi
+    echo ""|bash -c "$_arg_to app:deploy --name $name --image $image --tag $tag --port=$port --open=$open"
 }
 
 read_value() {
@@ -298,6 +309,12 @@ fi
 done <<< "$SERVICES"
 }
 
+WELCOME=$(cat <<EOF
+~ futuswarm admin ~ AWS_PROFILE=$AWS_PROFILE CLOUD=$CLOUD
+EOF
+)
+green "$WELCOME"
+
 # ACTION
 case "$ACTION" in
 migrate-secrets)
@@ -311,6 +328,12 @@ exit_on_undefined "$_arg_to" "--to"
 exit_on_undefined "$FROM_AWS_PROFILE" "FROM_AWS_PROFILE="
 noop_notice
 restore_services
+
+;; restart-services)
+exit_on_undefined "$FROM_AWS_PROFILE" "FROM_AWS_PROFILE="
+exit_on_undefined "$_arg_from" "--from"
+noop_notice
+restart_services
 
 ;; stored-services)
 exit_on_undefined "$FROM_AWS_PROFILE" "FROM_AWS_PROFILE="
@@ -344,5 +367,4 @@ print_help
 ;;
 esac
 
-# exit virtualenv
-deactivate
+deactivate_virtualenv

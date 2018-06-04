@@ -6,8 +6,8 @@ RUN apt-get update \
         wget curl jq \
         sudo ssh vim python python-dev python-pip locales bsdmainutils
 
-RUN pip install pip --upgrade \
-    && pip install setuptools \
+RUN pip install pip --upgrade
+RUN pip install setuptools \
     && pip install awscli secret
 
 RUN locale-gen en_US.UTF-8 && dpkg-reconfigure --frontend=noninteractive locales

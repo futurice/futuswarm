@@ -202,6 +202,9 @@ v2elb_target_group_arn() {
     echo $(stdin)|jq -r '.TargetGroups[]|.TargetGroupArn'
 }
 
+jq_v2elb_dnsname() {
+    echo $(stdin)|jq -r '.LoadBalancers|first|.DNSName'
+}
 
 jq_elb_dnsname() {
     echo $(stdin)|jq -r '.LoadBalancerDescriptions|first|.DNSName'
@@ -420,10 +423,10 @@ echo "/tmp/$REXRAY_CONFIG"
 prepare_rexray_config() {
 local F="$(rexray_config_file)"
 cp $REXRAY_CONFIG $F
-replaceinfile $F 'AWS_KEY' "$AWS_KEY"
-replaceinfile $F 'AWS_SECRET' "$AWS_SECRET"
 replaceinfile $F 'SECURITY_GROUPS' "$SECURITY_GROUPS"
 replaceinfile $F 'AWS_REGION' "$AWS_REGION"
+replaceinfile $F 'AWS_KEY' "$AWS_KEY"
+replaceinfile $F 'AWS_SECRET' "$AWS_SECRET"
 }
 
 get_sg_tag() {
@@ -465,4 +468,8 @@ acm_cert_issued() {
 local _CERT="${1:-$ACM_CERT}"
 local _IS_ISSUED=$(acm_cert_status "$_CERT")
 echo $(if [[ "$_IS_ISSUED" == "ISSUED" ]]; then echo "ok"; else echo ""; fi)
+}
+
+aws_keypair_fingerprint() {
+openssl pkey -in "$SSH_KEY" -pubout -outform DER|openssl md5 -c
 }

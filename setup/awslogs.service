@@ -1,0 +1,13 @@
+[Unit]
+Description=AWS CloudWatch Logs Agent
+After=syslog.service
+
+[Service]
+Type=simple
+Restart=always
+TimeoutSec=10s
+PIDFile=/var/awslogs/state/awslogs.pid
+ExecStart=/var/awslogs/bin/awslogs-agent-launcher.sh
+
+[Install]
+WantedBy=multi-user.target
