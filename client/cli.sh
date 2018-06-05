@@ -408,6 +408,13 @@ done
 _positional_names=('_arg_positional_arg')
 _arg_positional_arg=$ACTION
 
+# 3rd parties
+R=$(command -v jq||true)
+if [ -z "$R" ]; then
+    red "jq required -> brew install jq / apt-get install jq"
+    exit 1
+fi
+
 # ensure SSH_KEY is available
 DEFAULT_SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_rsa}"
 add_ssh_key_to_agent "$DEFAULT_SSH_KEY"
